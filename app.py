@@ -34,6 +34,24 @@ def get_model_choices():
     return [(config["name"], key) for key, config in MODELS.items()]
 
 
+def get_model_choices_by_type(task_type: str):
+    """Get model choices filtered by task type (video or image)"""
+    if task_type == "video":
+        # text2video and image2video
+        return [(config["name"], key) for key, config in MODELS.items()
+                if config.get("type") in ("text2video", "image2video")]
+    else:
+        # text2image and image2image
+        return [(config["name"], key) for key, config in MODELS.items()
+                if config.get("type") in ("text2image", "image2image")]
+
+
+def update_model_dropdown(task_type: str):
+    """Update model dropdown based on task type selection"""
+    choices = get_model_choices_by_type(task_type)
+    return gr.update(choices=choices, value=None)
+
+
 def format_task_for_display(task: dict) -> list:
     """Format a task record for table display"""
     status_emoji = {
@@ -110,7 +128,12 @@ def _build_params(
     size: str,
     seconds: str,
     cfg_scale: float,
-    video_type: str
+    video_type: str,
+    audio: str,
+    audio_url: str,
+    prompt_extend: str,
+    seed: str,
+    n_images: str
 ) -> dict:
     """Build params dict from UI inputs"""
     model_config = MODELS.get(model_key, {})
@@ -118,12 +141,17 @@ def _build_params(
 
     params = {"prompt": prompt}
 
+    # Add hidden params (like model name for wan2.5)
+    for param_name, param_config in params_def.items():
+        if param_config.get("type") == "hidden":
+            params[param_name] = param_config.get("default")
+
     if negative_prompt:
         params["negative_prompt"] = negative_prompt
     if model_name and model_name != "default":
         if "model_name" in params_def:
             params["model_name"] = model_name
-        elif "model" in params_def:
+        elif "model" in params_def and params_def["model"].get("type") != "hidden":
             params["model"] = model_name
     if mode:
         params["mode"] = mode
@@ -141,6 +169,16 @@ def _build_params(
         params["cfg_scale"] = cfg_scale
     if video_type:
         params["video_type"] = video_type
+    if audio and "audio" in params_def:
+        params["audio"] = audio
+    if audio_url and audio_url.strip() and "audio_url" in params_def:
+        params["audio_url"] = audio_url.strip()
+    if prompt_extend and "prompt_extend" in params_def:
+        params["prompt_extend"] = prompt_extend
+    if seed and seed.strip() and "seed" in params_def:
+        params["seed"] = seed.strip()
+    if n_images and "n" in params_def:
+        params["n"] = n_images
 
     return params
 
@@ -150,6 +188,7 @@ def submit_task(
     prompt: str,
     negative_prompt: str,
     image,
+    multi_images,
     model_name: str,
     mode: str,
     aspect_ratio: str,
@@ -159,6 +198,11 @@ def submit_task(
     seconds: str,
     cfg_scale: float,
     video_type: str,
+    audio: str,
+    audio_url: str,
+    prompt_extend: str,
+    seed: str,
+    n_images: str,
     api_token: str,
     debug_mode: bool
 ):
@@ -188,18 +232,48 @@ def submit_task(
                 gr.update(visible=False, value=""), None,
                 gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
 
-    if "image" in params_def and params_def["image"].get("required") and not image:
-        return ("Image is required for this model", refresh_task_table(), get_stats_text(),
-                gr.update(visible=False, value=""), None,
-                gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
+    # Determine image paths based on model type (single vs multi-image)
+    is_multi_image = model_config.get("multi_image", False)
+    if is_multi_image:
+        # Multi-image model: use multi_images (from Gallery component)
+        if "image" in params_def and params_def["image"].get("required") and not multi_images:
+            return ("At least one image is required for this model", refresh_task_table(), get_stats_text(),
+                    gr.update(visible=False, value=""), None,
+                    gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
+        # Extract file paths from multi_images
+        # Gallery returns list of tuples (filepath, caption) or just filepath
+        if multi_images:
+            image_paths = []
+            for item in multi_images:
+                if isinstance(item, tuple):
+                    # (filepath, caption) format
+                    image_paths.append(item[0])
+                elif isinstance(item, dict) and 'name' in item:
+                    # Dict format with 'name' key
+                    image_paths.append(item['name'])
+                elif hasattr(item, 'name'):
+                    # File object
+                    image_paths.append(item.name)
+                else:
+                    # Direct path string
+                    image_paths.append(str(item))
+        else:
+            image_paths = []
+    else:
+        # Single image model
+        if "image" in params_def and params_def["image"].get("required") and not image:
+            return ("Image is required for this model", refresh_task_table(), get_stats_text(),
+                    gr.update(visible=False, value=""), None,
+                    gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
+        image_paths = [image] if image else []
 
     # Build params
     params = _build_params(
         model_key, prompt, negative_prompt, model_name, mode, aspect_ratio,
-        duration, resolution, size, seconds, cfg_scale, video_type
+        duration, resolution, size, seconds, cfg_scale, video_type,
+        audio, audio_url, prompt_extend, seed, n_images
     )
 
-    image_path = image if image else None
     client = APIClient(api_token)
 
     # Debug mode: show preview and wait for confirmation
@@ -207,7 +281,7 @@ def submit_task(
         success, error, request_info = client.get_request_preview(
             model_key=model_key,
             params=params,
-            image_path=image_path
+            image_paths=image_paths
         )
 
         if not success:
@@ -228,7 +302,7 @@ def submit_task(
             "model_name": model_config["name"],
             "prompt": prompt,
             "params": params,
-            "image_path": image_path,
+            "image_paths": image_paths,
             "api_token": api_token
         }
 
@@ -238,18 +312,20 @@ def submit_task(
                 gr.update(visible=False), gr.update(visible=True), gr.update(visible=True))
 
     # Normal mode: submit directly
-    return _do_submit(model_key, model_config["name"], prompt, params, image_path, api_token)
+    return _do_submit(model_key, model_config["name"], prompt, params, image_paths, api_token)
 
 
-def _do_submit(model_key, model_name, prompt, params, image_path, api_token):
+def _do_submit(model_key, model_name, prompt, params, image_paths, api_token):
     """Actually submit the task to API"""
     # Create local task record first
+    # Store first image path for database (or comma-separated for multi-image)
+    image_path_for_db = ",".join(image_paths) if image_paths else None
     local_id = create_task(
         model_key=model_key,
         model_name=model_name,
         prompt=prompt,
         params=params,
-        image_path=image_path,
+        image_path=image_path_for_db,
         api_token=api_token
     )
 
@@ -258,7 +334,7 @@ def _do_submit(model_key, model_name, prompt, params, image_path, api_token):
     success, message, api_task_id = client.submit_task(
         model_key=model_key,
         params=params,
-        image_path=image_path
+        image_paths=image_paths
     )
 
     if success and api_task_id:
@@ -285,7 +361,7 @@ def confirm_send(pending_request):
         pending_request["model_name"],
         pending_request["prompt"],
         pending_request["params"],
-        pending_request["image_path"],
+        pending_request["image_paths"],
         pending_request["api_token"]
     )
 
@@ -338,7 +414,7 @@ def get_task_detail(task_id: int, task_uuid: str):
     """Get task details for preview"""
     task = _resolve_task(task_id, task_uuid)
     if not task:
-        return "Task not found (enter Task ID or Task UUID)", None, None, ""
+        return "Task not found (enter Task ID or Task UUID)", None, [], "", ""
 
     # Build info text
     info = f"""
@@ -365,10 +441,12 @@ def get_task_detail(task_id: int, task_uuid: str):
     model_config = MODELS.get(task['model_key'], {})
     is_image_task = model_config.get("type") in ("text2image", "image2image")
 
-    # Get result URLs
-    video_url = None
-    image_url = None
+    # Get result URLs - return all of them for multi-preview
+    video_urls = []
+    image_urls = []
     result_links = ""
+    first_video_url = None
+    video_urls_text = ""
 
     if task.get("result_urls"):
         try:
@@ -376,13 +454,16 @@ def get_task_detail(task_id: int, task_uuid: str):
             result_links = "\n".join(urls)
             if urls:
                 if is_image_task:
-                    image_url = urls[0]
+                    # For Gallery component, format as list of (url, label) tuples
+                    image_urls = [(url, f"Image {i+1}") for i, url in enumerate(urls)]
                 else:
-                    video_url = urls[0]
+                    video_urls = urls
+                    first_video_url = urls[0] if urls else None
+                    video_urls_text = "\n".join([f"Video {i+1}: {url}" for i, url in enumerate(urls)])
         except Exception:
             pass
 
-    return info, video_url, image_url, result_links
+    return info, first_video_url, image_urls, video_urls_text, result_links
 
 
 def delete_selected_task(task_id: int, task_uuid: str):
@@ -399,7 +480,7 @@ def delete_selected_task(task_id: int, task_uuid: str):
 def update_param_visibility(model_key: str):
     """Update parameter visibility based on selected model"""
     if not model_key or model_key not in MODELS:
-        return [gr.update(visible=False)] * 12  # Updated count without last_frame
+        return [gr.update(visible=False)] * 18  # Updated count with multi_images
 
     model_config = MODELS[model_key]
     params = model_config["params"]
@@ -420,17 +501,25 @@ def update_param_visibility(model_key: str):
     else:
         updates.append(gr.update(visible=False))
 
-    # image
-    if "image" in params:
+    # image (single image) - hide if model supports multi_image
+    if "image" in params and not model_config.get("multi_image"):
         image_label = params["image"].get("label", "Input Image")
         updates.append(gr.update(visible=True, label=image_label))
     else:
         updates.append(gr.update(visible=False))
 
-    # model_name / model
-    has_model = "model_name" in params or "model" in params
-    if has_model:
-        model_param = params.get("model_name") or params.get("model")
+    # multi_images (multiple images) - show if model supports multi_image
+    if "image" in params and model_config.get("multi_image"):
+        image_label = params["image"].get("label", "Input Images")
+        max_images = model_config.get("max_images", 10)
+        updates.append(gr.update(visible=True, label=f"{image_label} (最多{max_images}张)"))
+    else:
+        updates.append(gr.update(visible=False))
+
+    # model_name / model (skip hidden type)
+    has_model = ("model_name" in params or "model" in params)
+    model_param = params.get("model_name") or params.get("model") or {}
+    if has_model and model_param.get("type") != "hidden":
         choices = model_param.get("options", [])
         default = model_param.get("default", "")
         updates.append(gr.update(visible=True, choices=choices, value=default))
@@ -455,13 +544,13 @@ def update_param_visibility(model_key: str):
     else:
         updates.append(gr.update(visible=False))
 
-    # resolution (veo3)
+    # resolution (veo3, wan2.5-i2v)
     if "resolution" in params:
         updates.append(gr.update(visible=True, choices=params["resolution"]["options"], value=params["resolution"]["default"]))
     else:
         updates.append(gr.update(visible=False))
 
-    # size (sora)
+    # size (sora, wan2.5-t2v, wan2.5-t2i)
     if "size" in params:
         updates.append(gr.update(visible=True, choices=params["size"]["options"], value=params["size"]["default"]))
     else:
@@ -485,6 +574,36 @@ def update_param_visibility(model_key: str):
     else:
         updates.append(gr.update(visible=False))
 
+    # audio (wan2.5)
+    if "audio" in params:
+        updates.append(gr.update(visible=True, choices=params["audio"]["options"], value=params["audio"]["default"], label=params["audio"].get("label", "Audio")))
+    else:
+        updates.append(gr.update(visible=False))
+
+    # audio_url (wan2.5)
+    if "audio_url" in params:
+        updates.append(gr.update(visible=True, label=params["audio_url"].get("label", "Audio URL")))
+    else:
+        updates.append(gr.update(visible=False))
+
+    # prompt_extend (wan2.5)
+    if "prompt_extend" in params:
+        updates.append(gr.update(visible=True, choices=params["prompt_extend"]["options"], value=params["prompt_extend"]["default"], label=params["prompt_extend"].get("label", "Prompt Extend")))
+    else:
+        updates.append(gr.update(visible=False))
+
+    # seed (wan2.5)
+    if "seed" in params:
+        updates.append(gr.update(visible=True, label=params["seed"].get("label", "Seed")))
+    else:
+        updates.append(gr.update(visible=False))
+
+    # n (wan2.5 t2i - number of images)
+    if "n" in params:
+        updates.append(gr.update(visible=True, choices=params["n"]["options"], value=params["n"]["default"], label=params["n"].get("label", "Number of Images")))
+    else:
+        updates.append(gr.update(visible=False))
+
     return updates
 
 
@@ -495,7 +614,7 @@ def create_ui():
 
     with gr.Blocks(title="Video/Image Generation Client", theme=gr.themes.Soft()) as app:
         gr.Markdown("# Video/Image Generation Client")
-        gr.Markdown("Support: Kling, Midjourney Video, Sora, Veo3, Nano Banana Pro")
+        gr.Markdown("Support: Kling, Midjourney Video, Sora, Veo3, Wan2.5, Nano Banana Pro")
 
         with gr.Row():
             with gr.Column(scale=1):
@@ -512,10 +631,18 @@ def create_ui():
                     value=True
                 )
 
+                # Task Type Selection
+                task_type = gr.Radio(
+                    label="Task Type",
+                    choices=[("🎬 Video Generation", "video"), ("🖼️ Image Generation", "image")],
+                    value="video",
+                    interactive=True
+                )
+
                 # Model Selection
                 model_dropdown = gr.Dropdown(
                     label="Select Model",
-                    choices=get_model_choices(),
+                    choices=get_model_choices_by_type("video"),
                     value=None,
                     interactive=True
                 )
@@ -541,6 +668,19 @@ def create_ui():
                     image = gr.Image(
                         label="Input Image",
                         type="filepath",
+                        visible=False
+                    )
+
+                    # Multi-image upload for models that support it (e.g., nano_banana_pro_edit)
+                    # Using Gallery for image preview instead of File for better UX
+                    multi_images = gr.Gallery(
+                        label="Input Images (Multiple)",
+                        show_label=True,
+                        columns=4,
+                        rows=2,
+                        height="auto",
+                        object_fit="contain",
+                        interactive=True,
                         visible=False
                     )
 
@@ -593,6 +733,33 @@ def create_ui():
                         visible=False
                     )
 
+                    # Wan2.5 specific parameters
+                    audio = gr.Dropdown(
+                        label="Audio",
+                        visible=False
+                    )
+
+                    audio_url = gr.Textbox(
+                        label="Audio URL",
+                        visible=False
+                    )
+
+                    prompt_extend = gr.Dropdown(
+                        label="Prompt Extend",
+                        visible=False
+                    )
+
+                    seed = gr.Textbox(
+                        label="Seed",
+                        visible=False
+                    )
+
+                    # Wan2.5 t2i specific
+                    n_images = gr.Dropdown(
+                        label="Number of Images",
+                        visible=False
+                    )
+
                 # Submit buttons
                 with gr.Row():
                     submit_btn = gr.Button("Submit Task", variant="primary")
@@ -636,23 +803,48 @@ def create_ui():
                     delete_btn = gr.Button("Delete Task", variant="stop")
 
                 # Task Detail
-                with gr.Accordion("Task Detail", open=False):
+                with gr.Accordion("Task Detail", open=True):
                     task_info = gr.Markdown("")
                     with gr.Row():
+                        # Use Gallery for multiple images
+                        image_gallery = gr.Gallery(
+                            label="Image Results",
+                            show_label=True,
+                            columns=4,
+                            rows=2,
+                            height="auto",
+                            object_fit="contain"
+                        )
+                    with gr.Row():
+                        # Display first video (primary preview)
                         video_preview = gr.Video(label="Video Preview", visible=True)
-                        image_preview = gr.Image(label="Image Preview", visible=True)
-                    result_links = gr.Textbox(label="Result URLs", lines=3, interactive=False)
+                    # Show all video URLs for copying/downloading
+                    video_urls_display = gr.Textbox(
+                        label="Video URLs (click to copy)",
+                        lines=3,
+                        interactive=False,
+                        visible=True
+                    )
+                    result_links = gr.Textbox(label="All Result URLs", lines=3, interactive=False)
 
         # ============== Event Handlers ==============
+
+        # Task type changes model dropdown options
+        task_type.change(
+            fn=update_model_dropdown,
+            inputs=[task_type],
+            outputs=[model_dropdown]
+        )
 
         # Model selection changes parameter visibility
         model_dropdown.change(
             fn=update_param_visibility,
             inputs=[model_dropdown],
             outputs=[
-                prompt, negative_prompt, image,
+                prompt, negative_prompt, image, multi_images,
                 model_name, mode, aspect_ratio, duration,
-                resolution, size, seconds, cfg_scale, video_type
+                resolution, size, seconds, cfg_scale, video_type,
+                audio, audio_url, prompt_extend, seed, n_images
             ]
         )
 
@@ -660,9 +852,10 @@ def create_ui():
         submit_btn.click(
             fn=submit_task,
             inputs=[
-                model_dropdown, prompt, negative_prompt, image,
+                model_dropdown, prompt, negative_prompt, image, multi_images,
                 model_name, mode, aspect_ratio, duration, resolution,
                 size, seconds, cfg_scale, video_type,
+                audio, audio_url, prompt_extend, seed, n_images,
                 api_token, debug_mode
             ],
             outputs=[
@@ -718,7 +911,7 @@ def create_ui():
         view_detail_btn.click(
             fn=get_task_detail,
             inputs=[selected_task_id, selected_task_uuid],
-            outputs=[task_info, video_preview, image_preview, result_links]
+            outputs=[task_info, video_preview, image_gallery, video_urls_display, result_links]
         )
 
     return app

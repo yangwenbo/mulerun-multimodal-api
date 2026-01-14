@@ -46,10 +46,15 @@ class APIClient:
         self,
         model_key: str,
         params: dict,
-        image_path: Optional[str] = None
+        image_paths: Optional[list] = None
     ) -> Tuple[str, dict, dict]:
         """
         Build request URL, headers and body without sending.
+
+        Args:
+            model_key: The model identifier
+            params: Request parameters
+            image_paths: List of image paths (can be empty, single, or multiple)
 
         Returns:
             Tuple of (url, headers, body)
@@ -63,13 +68,14 @@ class APIClient:
         body = {}
 
         # Handle image encoding
-        if image_path:
-            encoded_image = self._encode_image(image_path)
-            # For nano_banana_pro_edit, use "images" array instead of "image"
-            if model_key == "nano_banana_pro_edit":
-                body["images"] = [encoded_image]
+        if image_paths:
+            encoded_images = [self._encode_image(path) for path in image_paths]
+            # Check if model uses "images" array instead of "image"
+            if model_config.get("image_as_array"):
+                body["images"] = encoded_images
             else:
-                body["image"] = encoded_image
+                # Single image mode - use first image
+                body["image"] = encoded_images[0] if encoded_images else None
 
         # Add other parameters
         params_def = model_config.get("params", {})
@@ -84,6 +90,18 @@ class APIClient:
                     body[key] = value_map[value]
                 elif key == "cfg_scale":
                     body[key] = float(value)
+                elif key == "seed":
+                    # Convert seed to integer
+                    try:
+                        body[key] = int(value)
+                    except (ValueError, TypeError):
+                        pass  # Skip invalid seed values
+                elif key == "duration" or key == "n":
+                    # Convert duration and n to integer
+                    try:
+                        body[key] = int(value)
+                    except (ValueError, TypeError):
+                        body[key] = value
                 else:
                     body[key] = value
 
@@ -93,7 +111,7 @@ class APIClient:
         self,
         model_key: str,
         params: dict,
-        image_path: Optional[str] = None
+        image_paths: Optional[list] = None
     ) -> Tuple[bool, str, dict]:
         """
         Get a preview of the request that would be sent.
@@ -108,13 +126,22 @@ class APIClient:
             return False, f"Unknown model: {model_key}", {}
 
         url, headers, body = self._build_request_body(
-            model_key, params, image_path
+            model_key, params, image_paths
         )
 
         # Create a display-friendly version of body (truncate base64 images)
         display_body = {}
         for key, value in body.items():
-            if isinstance(value, str) and "data:image" in value:
+            if isinstance(value, list):
+                # Handle arrays (e.g., images array)
+                display_list = []
+                for item in value:
+                    if isinstance(item, str) and "data:image" in item:
+                        display_list.append(f"{item[:30]}... ({len(item)} chars)")
+                    else:
+                        display_list.append(item)
+                display_body[key] = display_list
+            elif isinstance(value, str) and "data:image" in value:
                 # Find the base64 image part and truncate it
                 idx = value.find("data:image")
                 if idx > 0:
@@ -148,10 +175,15 @@ class APIClient:
         self,
         model_key: str,
         params: dict,
-        image_path: Optional[str] = None
+        image_paths: Optional[list] = None
     ) -> Tuple[bool, str, Optional[str]]:
         """
         Submit a video generation task
+
+        Args:
+            model_key: The model identifier
+            params: Request parameters
+            image_paths: List of image paths (can be empty, single, or multiple)
 
         Returns:
             Tuple of (success, message, task_id)
@@ -163,7 +195,7 @@ class APIClient:
             return False, f"Unknown model: {model_key}", None
 
         url, headers, body = self._build_request_body(
-            model_key, params, image_path
+            model_key, params, image_paths
         )
 
         try:
