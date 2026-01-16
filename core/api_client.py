@@ -10,9 +10,9 @@ from config import API_BASE_URL, API_TOKEN, MODELS
 class APIClient:
     """Unified API client for all video generation services"""
 
-    def __init__(self, token: Optional[str] = None):
+    def __init__(self, token: Optional[str] = None, base_url: Optional[str] = None):
         self.token = token or API_TOKEN
-        self.base_url = API_BASE_URL
+        self.base_url = base_url or API_BASE_URL
 
     def _get_headers(self) -> dict:
         """Get request headers"""
@@ -29,24 +29,40 @@ class APIClient:
         with open(image_path, "rb") as f:
             image_data = f.read()
 
-        # Detect image type
-        if image_path.lower().endswith(".png"):
-            mime_type = "image/png"
-        elif image_path.lower().endswith((".jpg", ".jpeg")):
-            mime_type = "image/jpeg"
-        elif image_path.lower().endswith(".webp"):
-            mime_type = "image/webp"
-        else:
-            mime_type = "image/jpeg"
+        # Detect image type by magic bytes (file signature)
+        # This is more reliable than file extension
+        mime_type = self._detect_image_type(image_data)
 
         base64_data = base64.b64encode(image_data).decode("utf-8")
         return f"data:{mime_type};base64,{base64_data}"
+
+    def _detect_image_type(self, image_data: bytes) -> str:
+        """Detect image MIME type from magic bytes"""
+        # JPEG: starts with FF D8 FF
+        if image_data[:3] == b'\xff\xd8\xff':
+            return "image/jpeg"
+        # PNG: starts with 89 50 4E 47 0D 0A 1A 0A
+        elif image_data[:8] == b'\x89PNG\r\n\x1a\n':
+            return "image/png"
+        # WebP: starts with RIFF....WEBP
+        elif image_data[:4] == b'RIFF' and image_data[8:12] == b'WEBP':
+            return "image/webp"
+        # GIF: starts with GIF87a or GIF89a
+        elif image_data[:6] in (b'GIF87a', b'GIF89a'):
+            return "image/gif"
+        # BMP: starts with BM
+        elif image_data[:2] == b'BM':
+            return "image/bmp"
+        else:
+            # Default to JPEG if unknown
+            return "image/jpeg"
 
     def _build_request_body(
         self,
         model_key: str,
         params: dict,
-        image_paths: Optional[list] = None
+        image_paths: Optional[list] = None,
+        model_config: Optional[dict] = None
     ) -> Tuple[str, dict, dict]:
         """
         Build request URL, headers and body without sending.
@@ -55,12 +71,16 @@ class APIClient:
             model_key: The model identifier
             params: Request parameters
             image_paths: List of image paths (can be empty, single, or multiple)
+            model_config: Optional model config (with site-specific overrides). If not provided, uses MODELS.
 
         Returns:
             Tuple of (url, headers, body)
         """
-        model_config = MODELS[model_key]
-        endpoint = model_config["post_endpoint"]
+        config = model_config if model_config else MODELS.get(model_key)
+        if not config:
+            raise ValueError(f"Unknown model: {model_key}")
+
+        endpoint = config["post_endpoint"]
         url = f"{self.base_url}{endpoint}"
         headers = self._get_headers()
 
@@ -71,14 +91,14 @@ class APIClient:
         if image_paths:
             encoded_images = [self._encode_image(path) for path in image_paths]
             # Check if model uses "images" array instead of "image"
-            if model_config.get("image_as_array"):
+            if config.get("image_as_array"):
                 body["images"] = encoded_images
             else:
                 # Single image mode - use first image
                 body["image"] = encoded_images[0] if encoded_images else None
 
         # Add other parameters
-        params_def = model_config.get("params", {})
+        params_def = config.get("params", {})
         for key, value in params.items():
             if key == "image":
                 continue  # Already handled
@@ -111,10 +131,17 @@ class APIClient:
         self,
         model_key: str,
         params: dict,
-        image_paths: Optional[list] = None
+        image_paths: Optional[list] = None,
+        model_config: Optional[dict] = None
     ) -> Tuple[bool, str, dict]:
         """
         Get a preview of the request that would be sent.
+
+        Args:
+            model_key: The model identifier
+            params: Request parameters
+            image_paths: List of image paths
+            model_config: Optional model config (with site-specific overrides)
 
         Returns:
             Tuple of (success, error_message, request_info)
@@ -122,11 +149,12 @@ class APIClient:
         if not self.token:
             return False, "API Token not configured", {}
 
-        if model_key not in MODELS:
+        config = model_config if model_config else MODELS.get(model_key)
+        if not config:
             return False, f"Unknown model: {model_key}", {}
 
         url, headers, body = self._build_request_body(
-            model_key, params, image_paths
+            model_key, params, image_paths, config
         )
 
         # Create a display-friendly version of body (truncate base64 images)
@@ -175,7 +203,8 @@ class APIClient:
         self,
         model_key: str,
         params: dict,
-        image_paths: Optional[list] = None
+        image_paths: Optional[list] = None,
+        model_config: Optional[dict] = None
     ) -> Tuple[bool, str, Optional[str]]:
         """
         Submit a video generation task
@@ -184,6 +213,7 @@ class APIClient:
             model_key: The model identifier
             params: Request parameters
             image_paths: List of image paths (can be empty, single, or multiple)
+            model_config: Optional model config (with site-specific overrides)
 
         Returns:
             Tuple of (success, message, task_id)
@@ -191,11 +221,12 @@ class APIClient:
         if not self.token:
             return False, "API Token not configured", None
 
-        if model_key not in MODELS:
+        config = model_config if model_config else MODELS.get(model_key)
+        if not config:
             return False, f"Unknown model: {model_key}", None
 
         url, headers, body = self._build_request_body(
-            model_key, params, image_paths
+            model_key, params, image_paths, config
         )
 
         try:
@@ -236,24 +267,30 @@ class APIClient:
     def get_task_status(
         self,
         model_key: str,
-        task_id: str
+        task_id: str,
+        model_config: Optional[dict] = None
     ) -> Tuple[str, Optional[list], Optional[str]]:
         """
         Get task status and results
+
+        Args:
+            model_key: The model identifier
+            task_id: The API task ID
+            model_config: Optional model config (with site-specific overrides)
 
         Returns:
             Tuple of (status, result_urls, error_message)
             status: 'pending', 'processing', 'completed', 'failed'
         """
-        if model_key not in MODELS:
+        config = model_config if model_config else MODELS.get(model_key)
+        if not config:
             return "failed", None, f"Unknown model: {model_key}"
 
-        model_config = MODELS[model_key]
-        endpoint = model_config["get_endpoint"].format(task_id=task_id)
+        endpoint = config["get_endpoint"].format(task_id=task_id)
         url = f"{self.base_url}{endpoint}"
 
         # Get result key from config (default to "videos" for backward compatibility)
-        result_key = model_config.get("result_key", "videos")
+        result_key = config.get("result_key", "videos")
 
         try:
             response = requests.get(

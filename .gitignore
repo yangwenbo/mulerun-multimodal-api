@@ -3,6 +3,9 @@
 *.sqlite
 *.sqlite3
 
+# Media cache
+media/
+
 # Environment
 .env
 .env.local

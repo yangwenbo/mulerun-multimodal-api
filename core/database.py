@@ -39,8 +39,10 @@ def init_db():
             status TEXT DEFAULT 'pending',
             task_id TEXT,
             result_urls TEXT,
+            local_paths TEXT,
             error_msg TEXT,
             api_token TEXT,
+            site TEXT DEFAULT 'mulerun',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -54,6 +56,27 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_created_at ON tasks(created_at DESC)
     """)
 
+    # Migration: Add site column if it doesn't exist (for existing databases)
+    try:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN site TEXT DEFAULT 'mulerun'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
+
+    # Create site index after ensuring column exists
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_site ON tasks(site)
+    """)
+
+    # Migration: Add local_paths column if it doesn't exist (for existing databases)
+    try:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN local_paths TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
+
     conn.commit()
     conn.close()
 
@@ -64,7 +87,8 @@ def create_task(
     prompt: str,
     params: dict,
     image_path: Optional[str] = None,
-    api_token: Optional[str] = None
+    api_token: Optional[str] = None,
+    site: str = "mulerun"
 ) -> int:
     """Create a new task record"""
     conn = get_connection()
@@ -72,9 +96,9 @@ def create_task(
     now = get_now_utc8()
 
     cursor.execute("""
-        INSERT INTO tasks (model_key, model_name, prompt, image_path, params, api_token, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-    """, (model_key, model_name, prompt, image_path, json.dumps(params, ensure_ascii=False), api_token, now, now))
+        INSERT INTO tasks (model_key, model_name, prompt, image_path, params, api_token, site, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+    """, (model_key, model_name, prompt, image_path, json.dumps(params, ensure_ascii=False), api_token, site, now, now))
 
     task_id = cursor.lastrowid
     conn.commit()
@@ -113,16 +137,31 @@ def update_task_status(local_id: int, status: str, error_msg: Optional[str] = No
     conn.close()
 
 
-def update_task_result(local_id: int, result_urls: list):
-    """Update task with result URLs"""
+def update_task_result(local_id: int, result_urls: list, local_paths: list = None):
+    """Update task with result URLs and optional local paths"""
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
         UPDATE tasks
-        SET status = 'completed', result_urls = ?, updated_at = ?
+        SET status = 'completed', result_urls = ?, local_paths = ?, updated_at = ?
         WHERE id = ?
-    """, (json.dumps(result_urls), get_now_utc8(), local_id))
+    """, (json.dumps(result_urls), json.dumps(local_paths) if local_paths else None, get_now_utc8(), local_id))
+
+    conn.commit()
+    conn.close()
+
+
+def update_task_local_paths(local_id: int, local_paths: list):
+    """Update task with local file paths (for re-downloading)"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE tasks
+        SET local_paths = ?, updated_at = ?
+        WHERE id = ?
+    """, (json.dumps(local_paths), get_now_utc8(), local_id))
 
     conn.commit()
     conn.close()
@@ -145,16 +184,24 @@ def get_pending_tasks() -> list:
     return [dict(row) for row in rows]
 
 
-def get_all_tasks(limit: int = 100) -> list:
-    """Get all tasks for display"""
+def get_all_tasks(limit: int = 100, site: Optional[str] = None) -> list:
+    """Get all tasks for display, optionally filtered by site"""
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT * FROM tasks
-        ORDER BY created_at DESC
-        LIMIT ?
-    """, (limit,))
+    if site:
+        cursor.execute("""
+            SELECT * FROM tasks
+            WHERE site = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (site, limit))
+    else:
+        cursor.execute("""
+            SELECT * FROM tasks
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (limit,))
 
     rows = cursor.fetchall()
     conn.close()
@@ -197,18 +244,28 @@ def delete_task(local_id: int):
     conn.close()
 
 
-def get_task_stats() -> dict:
-    """Get statistics about tasks"""
+def get_task_stats(site: Optional[str] = None) -> dict:
+    """Get statistics about tasks, optionally filtered by site"""
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            status,
-            COUNT(*) as count
-        FROM tasks
-        GROUP BY status
-    """)
+    if site:
+        cursor.execute("""
+            SELECT
+                status,
+                COUNT(*) as count
+            FROM tasks
+            WHERE site = ?
+            GROUP BY status
+        """, (site,))
+    else:
+        cursor.execute("""
+            SELECT
+                status,
+                COUNT(*) as count
+            FROM tasks
+            GROUP BY status
+        """)
 
     rows = cursor.fetchall()
     conn.close()

@@ -6,9 +6,10 @@ import time
 import logging
 from typing import Callable, Optional
 
-from config import POLL_INTERVAL, MAX_POLL_ATTEMPTS
-from database import get_pending_tasks, update_task_status, update_task_result
-from api_client import APIClient
+from config import POLL_INTERVAL, MAX_POLL_ATTEMPTS, API_SITES, MODELS, get_models_for_site
+from core.database import get_pending_tasks, update_task_status, update_task_result
+from core.api_client import APIClient
+from core.media_manager import media_manager
 
 # Configure logging
 logging.basicConfig(
@@ -80,6 +81,7 @@ class TaskPoller:
             api_task_id = task["task_id"]
             model_key = task["model_key"]
             api_token = task.get("api_token")
+            site = task.get("site", "mulerun")  # Default to mulerun for old tasks
 
             if not api_token:
                 logger.warning(f"Task {local_id} has no API token, skipping")
@@ -98,17 +100,32 @@ class TaskPoller:
                     self._on_task_failed(task)
                 continue
 
-            # Poll the task with task-specific token
-            client = APIClient(api_token)
-            status, videos, error = client.get_task_status(model_key, api_task_id)
+            # Get site configuration and model config
+            site_config = API_SITES.get(site, API_SITES["mulerun"])
+            base_url = site_config.get("base_url")
+            site_models = get_models_for_site(site)
+            model_config = site_models.get(model_key)
+
+            # Poll the task with task-specific token and site base_url
+            client = APIClient(api_token, base_url)
+            status, videos, error = client.get_task_status(model_key, api_task_id, model_config)
             self._poll_counts[poll_key] = poll_count + 1
 
-            logger.info(f"Task {local_id}: status={status}")
+            logger.info(f"Task {local_id} (site={site}): status={status}")
 
             if status == "completed":
-                update_task_result(local_id, videos or [])
+                # Determine media type based on model config
+                model_base_config = MODELS.get(model_key, {})
+                is_image_task = model_base_config.get("type") in ("text2image", "image2image")
+                media_type = "image" if is_image_task else "video"
+
+                # Download media to local storage
+                local_paths = media_manager.download_media(local_id, videos or [], media_type)
+
+                # Update database with both remote URLs and local paths
+                update_task_result(local_id, videos or [], local_paths if local_paths else None)
                 del self._poll_counts[poll_key]
-                logger.info(f"Task {local_id} completed with {len(videos or [])} videos")
+                logger.info(f"Task {local_id} completed with {len(videos or [])} {media_type}(s), downloaded {len([p for p in local_paths if p])} files")
 
                 if self._on_task_complete:
                     self._on_task_complete(task, videos)
@@ -123,15 +140,21 @@ class TaskPoller:
 
             # For pending/processing, just continue polling
 
-    def poll_single_task(self, local_id: int, model_key: str, api_task_id: str, api_token: str) -> tuple:
+    def poll_single_task(self, local_id: int, model_key: str, api_task_id: str, api_token: str, site: str = "mulerun") -> tuple:
         """
         Poll a single task immediately (for manual refresh)
 
         Returns:
             Tuple of (status, videos, error)
         """
-        client = APIClient(api_token)
-        return client.get_task_status(model_key, api_task_id)
+        # Get site configuration and model config
+        site_config = API_SITES.get(site, API_SITES["mulerun"])
+        base_url = site_config.get("base_url")
+        site_models = get_models_for_site(site)
+        model_config = site_models.get(model_key)
+
+        client = APIClient(api_token, base_url)
+        return client.get_task_status(model_key, api_task_id, model_config)
 
 
 # Global poller instance

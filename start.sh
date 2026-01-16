@@ -14,8 +14,12 @@ source venv/bin/activate
 
 # Install dependencies
 echo "Checking dependencies..."
-pip install -q -r requirements.txt
+if [ -f "pyproject.toml" ]; then
+    pip install -q -e .
+else
+    pip install -q -r requirements.txt
+fi
 
 # Run the application
 echo "Starting Video Generation Client..."
-python app.py
+python main.py
