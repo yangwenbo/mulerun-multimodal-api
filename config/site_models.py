@@ -41,6 +41,10 @@ SITE_MODELS = {
         "nano_banana_pro_edit": {},
         "midjourney_video": {},
         "midjourney_diffusion": {},
+        "wan2_6_t2v": {},
+        "wan2_6_t2v_spark": {},
+        "wan2_6_i2v": {},
+        "wan2_6_i2v_spark": {},
         "wan2_6_t2i": {},
         "wan2_6_i2i": {},
     }

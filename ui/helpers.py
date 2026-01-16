@@ -55,8 +55,12 @@ def format_task_for_display(task: dict) -> list:
     else:
         result = ""
 
+    # Task UUID (API task ID)
+    task_uuid = task.get("task_id", "") or ""
+
     return [
         task["id"],
+        task_uuid,
         f"{status_emoji.get(task['status'], '⚪')} {task['status']}",
         task["model_name"],
         prompt,
@@ -96,7 +100,8 @@ def build_params(
     audio_url: str,
     prompt_extend: str,
     seed: str,
-    n_images: str
+    n_images: str,
+    shot_type: str = None
 ) -> dict:
     """Build params dict from UI inputs"""
     model_config = MODELS.get(model_key, {})
@@ -143,5 +148,7 @@ def build_params(
         params["seed"] = seed.strip()
     if n_images and "n" in params_def:
         params["n"] = n_images
+    if shot_type and "shot_type" in params_def:
+        params["shot_type"] = shot_type
 
     return params

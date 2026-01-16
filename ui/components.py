@@ -179,6 +179,12 @@ def create_ui():
                         visible=False
                     )
 
+                    # Wan2.6 t2v specific
+                    shot_type = gr.Dropdown(
+                        label="Shot Type",
+                        visible=False
+                    )
+
                 # Submit buttons
                 with gr.Row():
                     submit_btn = gr.Button("Submit Task", variant="primary")
@@ -203,8 +209,8 @@ def create_ui():
                 task_history_title = gr.Markdown("### Task History (MuleRun)")
 
                 task_table = gr.Dataframe(
-                    headers=["ID", "Status", "Model", "Prompt", "Result", "Error", "Created"],
-                    datatype=["number", "str", "str", "str", "str", "str", "str"],
+                    headers=["ID", "Task UUID", "Status", "Model", "Prompt", "Result", "Error", "Created"],
+                    datatype=["number", "str", "str", "str", "str", "str", "str", "str"],
                     value=refresh_task_table("mulerun"),
                     interactive=False,
                     wrap=True
@@ -267,7 +273,7 @@ def create_ui():
                 prompt, negative_prompt, image, multi_images,
                 model_name, mode, aspect_ratio, duration,
                 resolution, size, seconds, cfg_scale, video_type,
-                audio, audio_url, prompt_extend, seed, n_images
+                audio, audio_url, prompt_extend, seed, n_images, shot_type
             ]
         )
 
@@ -278,7 +284,7 @@ def create_ui():
                 model_dropdown, prompt, negative_prompt, image, multi_images,
                 model_name, mode, aspect_ratio, duration, resolution,
                 size, seconds, cfg_scale, video_type,
-                audio, audio_url, prompt_extend, seed, n_images,
+                audio, audio_url, prompt_extend, seed, n_images, shot_type,
                 api_token, debug_mode, site_selector
             ],
             outputs=[
