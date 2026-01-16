@@ -247,7 +247,7 @@ class APIClient:
                 url,
                 headers=headers,
                 json=body,
-                timeout=60
+                timeout=(30, 300)  # (connect_timeout, read_timeout) - increased for large image uploads
             )
 
             if response.status_code in (200, 202):

@@ -127,7 +127,11 @@ def create_ui():
         # Beautiful title with logo
         gr.HTML("""
         <div class="title-container">
-            <h1>Mule Multimodal API</h1>
+            <h1>Mule Multimodal Studio</h1>
+            <div>
+            Multiple Multimodal API of Kling, Midjourney, Google Veo3, OpenAI Sora2, Alibaba Wan2.5/2.6 and Google Nano Banana Pro to generate Images and Videos
+            </div>
+            
         </div>
         """)
 
@@ -302,7 +306,7 @@ def create_ui():
                         label="Reference Images",
                         show_label=True,
                         columns=3,
-                        rows=1,
+                        rows=2,
                         height="auto",
                         object_fit="contain",
                         interactive=True,
