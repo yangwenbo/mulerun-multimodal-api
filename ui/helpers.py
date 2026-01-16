@@ -78,9 +78,14 @@ def refresh_task_table(site: str = "mulerun"):
 
 
 def get_stats_text(site: str = "mulerun"):
-    """Get statistics text for a specific site"""
+    """Get statistics text for a specific site as HTML badges"""
     stats = get_task_stats(site=site)
-    return f"Pending: {stats['pending']} | Processing: {stats['processing']} | Completed: {stats['completed']} | Failed: {stats['failed']}"
+    return f'''<div class="stats-container">
+        <span class="stat-badge stat-pending">⏳ Pending: {stats['pending']}</span>
+        <span class="stat-badge stat-processing">⚙️ Processing: {stats['processing']}</span>
+        <span class="stat-badge stat-completed">✅ Completed: {stats['completed']}</span>
+        <span class="stat-badge stat-failed">❌ Failed: {stats['failed']}</span>
+    </div>'''
 
 
 def build_params(

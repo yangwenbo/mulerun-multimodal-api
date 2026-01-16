@@ -32,7 +32,7 @@ VEO3 = {
             "required": False,
             "options": ["720p", "1080p"],
             "default": "720p",
-            "label": "Resolution (分辨率，1080p仅支持8秒)"
+            "label": "Resolution (分辨率)"
         },
         "duration": {
             "type": "dropdown",

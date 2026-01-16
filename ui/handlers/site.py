@@ -27,7 +27,7 @@ def update_site_selection(site_key: str, task_type: str):
     stats = get_stats_text(site_key)
 
     # Update task history title
-    title = f"### Task History ({site_name})"
+    title = f"### 📋 Task History ({site_name})"
 
     return (
         gr.update(value=token),  # Update API token

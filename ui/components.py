@@ -21,9 +21,115 @@ from ui.handlers import (
 def create_ui():
     """Create the Gradio UI"""
 
-    with gr.Blocks(title="Video/Image Generation Client", theme=gr.themes.Soft()) as app:
-        gr.Markdown("# Video/Image Generation Client")
-        gr.Markdown("Support: Kling, Midjourney, Sora2, Veo3, Wan2.5, Wan2.6, Nano Banana Pro")
+    # Custom CSS with orange brand color
+    custom_css = """
+    /* Orange brand color theme */
+    :root {
+        --brand-orange: #f97316;
+        --brand-orange-light: #fed7aa;
+        --brand-orange-dark: #ea580c;
+    }
+
+    /* Title styling */
+    .title-container {
+        text-align: center;
+        padding: 1rem 0 0.5rem 0;
+        border-bottom: 3px solid var(--brand-orange);
+        margin-bottom: 1rem;
+    }
+    .title-container h1 {
+        color: var(--brand-orange-dark);
+        font-size: 2rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Model badges */
+    .model-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        padding: 0.5rem 0;
+    }
+    .model-badge {
+        background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-dark));
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+    }
+
+    /* Stats badges */
+    .stats-container {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .stat-badge {
+        padding: 0.25rem 0.6rem;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .stat-pending { background: #fef3c7; color: #b45309; }
+    .stat-processing { background: #dbeafe; color: #1d4ed8; }
+    .stat-completed { background: #d1fae5; color: #047857; }
+    .stat-failed { background: #fee2e2; color: #dc2626; }
+
+    /* Primary button orange style */
+    .primary-btn, button.primary {
+        background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-dark)) !important;
+        border: none !important;
+    }
+    .primary-btn:hover, button.primary:hover {
+        background: linear-gradient(135deg, var(--brand-orange-dark), #c2410c) !important;
+    }
+
+    /* Section headers */
+    .section-header {
+        color: var(--brand-orange-dark);
+        border-left: 4px solid var(--brand-orange);
+        padding-left: 0.75rem;
+        margin: 1rem 0 0.5rem 0;
+    }
+
+    /* Task history title */
+    .history-title {
+        color: var(--brand-orange-dark);
+        border-bottom: 2px solid var(--brand-orange-light);
+        padding-bottom: 0.5rem;
+    }
+
+    /* Compact table styling */
+    .task-table table {
+        font-size: 0.9rem;
+    }
+    .task-table td, .task-table th {
+        padding: 0.5rem !important;
+    }
+
+    /* Accordion styling */
+    .gr-accordion {
+        border-color: var(--brand-orange-light) !important;
+    }
+
+    /* Input focus states */
+    input:focus, textarea:focus, select:focus {
+        border-color: var(--brand-orange) !important;
+        box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+    }
+    """
+
+    with gr.Blocks(title="Mule Multimodal API", theme=gr.themes.Soft(), css=custom_css) as app:
+        # Beautiful title with logo
+        gr.HTML("""
+        <div class="title-container">
+            <h1>Mule Multimodal API</h1>
+        </div>
+        """)
 
         with gr.Row():
             with gr.Column(scale=1):
@@ -69,7 +175,7 @@ def create_ui():
 
                 # Dynamic Parameters
                 with gr.Group():
-                    gr.Markdown("### Parameters")
+                    gr.Markdown("### ⚙️ Parameters", elem_classes=["section-header"])
 
                     prompt = gr.Textbox(
                         label="Prompt",
@@ -205,9 +311,9 @@ def create_ui():
 
                 # Submit buttons
                 with gr.Row():
-                    submit_btn = gr.Button("Submit Task", variant="primary")
-                    confirm_send_btn = gr.Button("Confirm Send", variant="primary", visible=False)
-                    cancel_send_btn = gr.Button("Cancel", visible=False)
+                    submit_btn = gr.Button("🚀 Submit Task", variant="primary")
+                    confirm_send_btn = gr.Button("✅ Confirm Send", variant="primary", visible=False)
+                    cancel_send_btn = gr.Button("❌ Cancel", visible=False)
 
                 submit_result = gr.Textbox(label="Result", interactive=False)
 
@@ -224,7 +330,7 @@ def create_ui():
 
             with gr.Column(scale=2):
                 # Task History
-                task_history_title = gr.Markdown("### Task History (MuleRun)")
+                task_history_title = gr.Markdown("### 📋 Task History (MuleRun)", elem_classes=["history-title"])
 
                 task_table = gr.Dataframe(
                     headers=["ID", "Task UUID", "Status", "Model", "Prompt", "Result", "Error", "Created"],
@@ -235,18 +341,18 @@ def create_ui():
                 )
 
                 with gr.Row():
-                    refresh_btn = gr.Button("Refresh List", variant="secondary")
-                    stats_text = gr.Markdown(get_stats_text("mulerun"))
+                    refresh_btn = gr.Button("🔄 Refresh", variant="secondary")
+                    stats_text = gr.HTML(get_stats_text("mulerun"))
 
                 with gr.Row():
-                    selected_task_id = gr.Number(label="Task ID", precision=0)
-                    selected_task_uuid = gr.Textbox(label="Task UUID", placeholder="e.g. 5b00bd55-bac9-441b-8c5c-baf56e58285d")
-                    poll_btn = gr.Button("Poll Task")
-                    view_detail_btn = gr.Button("View Detail")
-                    delete_btn = gr.Button("Delete Task", variant="stop")
+                    selected_task_id = gr.Number(label="Task ID", precision=0, scale=1)
+                    selected_task_uuid = gr.Textbox(label="Task UUID", placeholder="e.g. 5b00bd55-...", scale=2)
+                    poll_btn = gr.Button("🔍 Poll", scale=1)
+                    view_detail_btn = gr.Button("👁️ Detail", scale=1)
+                    delete_btn = gr.Button("🗑️ Delete", variant="stop", scale=1)
 
                 # Task Detail
-                with gr.Accordion("Task Detail", open=True):
+                with gr.Accordion("📊 Task Detail", open=True):
                     task_info = gr.Markdown("")
                     with gr.Row():
                         image_gallery = gr.Gallery(
