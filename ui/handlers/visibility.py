@@ -9,7 +9,7 @@ from config import MODELS
 def update_param_visibility(model_key: str):
     """Update parameter visibility based on selected model"""
     if not model_key or model_key not in MODELS:
-        return [gr.update(visible=False)] * 19
+        return [gr.update(visible=False)] * 21
 
     model_config = MODELS[model_key]
     params = model_config["params"]
@@ -51,55 +51,64 @@ def update_param_visibility(model_key: str):
     if has_model and model_param.get("type") != "hidden":
         choices = model_param.get("options", [])
         default = model_param.get("default", "")
-        updates.append(gr.update(visible=True, choices=choices, value=default))
+        label = model_param.get("label", "Model Version")
+        updates.append(gr.update(visible=True, choices=choices, value=default, label=label))
     else:
         updates.append(gr.update(visible=False))
 
     # mode
     if "mode" in params:
-        updates.append(gr.update(visible=True, choices=params["mode"]["options"], value=params["mode"]["default"]))
+        label = params["mode"].get("label", "Mode")
+        updates.append(gr.update(visible=True, choices=params["mode"]["options"], value=params["mode"]["default"], label=label))
     else:
         updates.append(gr.update(visible=False))
 
     # aspect_ratio
     if "aspect_ratio" in params:
-        updates.append(gr.update(visible=True, choices=params["aspect_ratio"]["options"], value=params["aspect_ratio"]["default"]))
+        label = params["aspect_ratio"].get("label", "Aspect Ratio")
+        updates.append(gr.update(visible=True, choices=params["aspect_ratio"]["options"], value=params["aspect_ratio"]["default"], label=label))
     else:
         updates.append(gr.update(visible=False))
 
     # duration
     if "duration" in params:
-        updates.append(gr.update(visible=True, choices=params["duration"]["options"], value=params["duration"]["default"]))
+        label = params["duration"].get("label", "Duration")
+        updates.append(gr.update(visible=True, choices=params["duration"]["options"], value=params["duration"]["default"], label=label))
     else:
         updates.append(gr.update(visible=False))
 
     # resolution (veo3, wan2.5-i2v)
     if "resolution" in params:
-        updates.append(gr.update(visible=True, choices=params["resolution"]["options"], value=params["resolution"]["default"]))
+        label = params["resolution"].get("label", "Resolution")
+        updates.append(gr.update(visible=True, choices=params["resolution"]["options"], value=params["resolution"]["default"], label=label))
     else:
         updates.append(gr.update(visible=False))
 
     # size (sora, wan2.5-t2v, wan2.5-t2i)
     if "size" in params:
-        updates.append(gr.update(visible=True, choices=params["size"]["options"], value=params["size"]["default"]))
+        label = params["size"].get("label", "Size")
+        updates.append(gr.update(visible=True, choices=params["size"]["options"], value=params["size"]["default"], label=label))
     else:
         updates.append(gr.update(visible=False))
 
     # seconds (sora)
     if "seconds" in params:
-        updates.append(gr.update(visible=True, choices=params["seconds"]["options"], value=params["seconds"]["default"]))
+        label = params["seconds"].get("label", "Seconds")
+        updates.append(gr.update(visible=True, choices=params["seconds"]["options"], value=params["seconds"]["default"], label=label))
     else:
         updates.append(gr.update(visible=False))
 
     # cfg_scale
     if "cfg_scale" in params:
-        updates.append(gr.update(visible=True, value=params["cfg_scale"]["default"]))
+        label = params["cfg_scale"].get("label", "CFG Scale")
+        updates.append(gr.update(visible=True, value=params["cfg_scale"]["default"], label=label))
     else:
         updates.append(gr.update(visible=False))
 
     # video_type (midjourney)
     if "video_type" in params:
-        updates.append(gr.update(visible=True, choices=params["video_type"]["options"], value=params["video_type"]["default"]))
+        label = params["video_type"].get("label", "Video Type")
+        updates.append(gr.update(visible=True, choices=params["video_type"]["options"], value=params["video_type"]["default"], label=label))
     else:
         updates.append(gr.update(visible=False))
 
@@ -136,6 +145,21 @@ def update_param_visibility(model_key: str):
     # shot_type (wan2.6 t2v)
     if "shot_type" in params:
         updates.append(gr.update(visible=True, choices=params["shot_type"]["options"], value=params["shot_type"]["default"], label=params["shot_type"].get("label", "Shot Type")))
+    else:
+        updates.append(gr.update(visible=False))
+
+    # last_frame (veo3)
+    if "last_frame" in params:
+        last_frame_label = params["last_frame"].get("label", "Last Frame")
+        updates.append(gr.update(visible=True, label=last_frame_label))
+    else:
+        updates.append(gr.update(visible=False))
+
+    # reference_images (veo3)
+    if "reference_images" in params:
+        ref_images_label = params["reference_images"].get("label", "Reference Images")
+        max_images = params["reference_images"].get("max_images", 3)
+        updates.append(gr.update(visible=True, label=f"{ref_images_label} (最多{max_images}张)"))
     else:
         updates.append(gr.update(visible=False))
 

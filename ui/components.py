@@ -185,6 +185,24 @@ def create_ui():
                         visible=False
                     )
 
+                    # Veo3 specific parameters
+                    last_frame = gr.Image(
+                        label="Last Frame",
+                        type="filepath",
+                        visible=False
+                    )
+
+                    reference_images = gr.Gallery(
+                        label="Reference Images",
+                        show_label=True,
+                        columns=3,
+                        rows=1,
+                        height="auto",
+                        object_fit="contain",
+                        interactive=True,
+                        visible=False
+                    )
+
                 # Submit buttons
                 with gr.Row():
                     submit_btn = gr.Button("Submit Task", variant="primary")
@@ -273,7 +291,8 @@ def create_ui():
                 prompt, negative_prompt, image, multi_images,
                 model_name, mode, aspect_ratio, duration,
                 resolution, size, seconds, cfg_scale, video_type,
-                audio, audio_url, prompt_extend, seed, n_images, shot_type
+                audio, audio_url, prompt_extend, seed, n_images, shot_type,
+                last_frame, reference_images
             ]
         )
 
@@ -285,6 +304,7 @@ def create_ui():
                 model_name, mode, aspect_ratio, duration, resolution,
                 size, seconds, cfg_scale, video_type,
                 audio, audio_url, prompt_extend, seed, n_images, shot_type,
+                last_frame, reference_images,
                 api_token, debug_mode, site_selector
             ],
             outputs=[

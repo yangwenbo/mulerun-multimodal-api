@@ -225,7 +225,7 @@ WAN2_6_T2V_SPARK = {
             "required": False,
             "options": ["single", "multi"],
             "default": "single",
-            "label": "Shot Type (镜头类型: single=单镜头, multi=多镜头)"
+            "label": "Shot Type (镜头类型: single=单镜头, multi=多镜头, 仅当Prompt Extend=true生效)"
         },
         "audio": {
             "type": "dropdown",
@@ -277,7 +277,7 @@ WAN2_6_I2V_SPARK = {
             "required": False,
             "options": ["single", "multi"],
             "default": "single",
-            "label": "Shot Type (镜头类型: single=单镜头, multi=多镜头)"
+            "label": "Shot Type (镜头类型: single=单镜头, multi=多镜头, 仅当Prompt Extend=true生效)"
         },
         "audio": {
             "type": "dropdown",

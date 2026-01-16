@@ -35,6 +35,8 @@ def submit_task(
     seed: str,
     n_images: str,
     shot_type: str,
+    last_frame,
+    reference_images,
     api_token: str,
     debug_mode: bool,
     site_key: str
@@ -103,12 +105,35 @@ def submit_task(
                     gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
         image_paths = [image] if image else []
 
+    # Handle last_frame (veo3 interpolation)
+    last_frame_path = last_frame if last_frame else None
+
+    # Handle reference_images (veo3)
+    reference_image_paths = []
+    if reference_images:
+        for item in reference_images:
+            if isinstance(item, tuple):
+                reference_image_paths.append(item[0])
+            elif isinstance(item, dict) and 'name' in item:
+                reference_image_paths.append(item['name'])
+            elif hasattr(item, 'name'):
+                reference_image_paths.append(item.name)
+            else:
+                reference_image_paths.append(str(item))
+
     # Build params
     params = build_params(
         model_key, prompt, negative_prompt, model_name, mode, aspect_ratio,
         duration, resolution, size, seconds, cfg_scale, video_type,
         audio, audio_url, prompt_extend, seed, n_images, shot_type
     )
+
+    # Create extra_images dict for special image parameters
+    extra_images = {}
+    if last_frame_path:
+        extra_images["last_frame"] = last_frame_path
+    if reference_image_paths:
+        extra_images["reference_images"] = reference_image_paths
 
     client = APIClient(api_token, base_url)
 
@@ -118,7 +143,8 @@ def submit_task(
             model_key=model_key,
             params=params,
             image_paths=image_paths,
-            model_config=model_config
+            model_config=model_config,
+            extra_images=extra_images
         )
 
         if not success:
@@ -140,6 +166,7 @@ def submit_task(
             "prompt": prompt,
             "params": params,
             "image_paths": image_paths,
+            "extra_images": extra_images,
             "api_token": api_token,
             "base_url": base_url,
             "model_config": model_config,
@@ -152,10 +179,10 @@ def submit_task(
                 gr.update(visible=False), gr.update(visible=True), gr.update(visible=True))
 
     # Normal mode: submit directly
-    return _do_submit(model_key, model_config["name"], prompt, params, image_paths, api_token, base_url, model_config, site_key)
+    return _do_submit(model_key, model_config["name"], prompt, params, image_paths, extra_images, api_token, base_url, model_config, site_key)
 
 
-def _do_submit(model_key, model_name, prompt, params, image_paths, api_token, base_url, model_config, site):
+def _do_submit(model_key, model_name, prompt, params, image_paths, extra_images, api_token, base_url, model_config, site):
     """Actually submit the task to API"""
     # Create local task record first
     image_path_for_db = ",".join(image_paths) if image_paths else None
@@ -175,7 +202,8 @@ def _do_submit(model_key, model_name, prompt, params, image_paths, api_token, ba
         model_key=model_key,
         params=params,
         image_paths=image_paths,
-        model_config=model_config
+        model_config=model_config,
+        extra_images=extra_images
     )
 
     if success and api_task_id:
@@ -198,12 +226,14 @@ def confirm_send(pending_request):
                 gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
 
     site = pending_request.get("site", "mulerun")
+    extra_images = pending_request.get("extra_images", {})
     return _do_submit(
         pending_request["model_key"],
         pending_request["model_name"],
         pending_request["prompt"],
         pending_request["params"],
         pending_request["image_paths"],
+        extra_images,
         pending_request["api_token"],
         pending_request["base_url"],
         pending_request["model_config"],

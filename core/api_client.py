@@ -62,7 +62,8 @@ class APIClient:
         model_key: str,
         params: dict,
         image_paths: Optional[list] = None,
-        model_config: Optional[dict] = None
+        model_config: Optional[dict] = None,
+        extra_images: Optional[dict] = None
     ) -> Tuple[str, dict, dict]:
         """
         Build request URL, headers and body without sending.
@@ -72,6 +73,7 @@ class APIClient:
             params: Request parameters
             image_paths: List of image paths (can be empty, single, or multiple)
             model_config: Optional model config (with site-specific overrides). If not provided, uses MODELS.
+            extra_images: Optional dict of extra image parameters (e.g., last_frame, reference_images)
 
         Returns:
             Tuple of (url, headers, body)
@@ -96,6 +98,13 @@ class APIClient:
             else:
                 # Single image mode - use first image
                 body["image"] = encoded_images[0] if encoded_images else None
+
+        # Handle extra images (last_frame, reference_images)
+        if extra_images:
+            if "last_frame" in extra_images and extra_images["last_frame"]:
+                body["last_frame"] = self._encode_image(extra_images["last_frame"])
+            if "reference_images" in extra_images and extra_images["reference_images"]:
+                body["reference_images"] = [self._encode_image(path) for path in extra_images["reference_images"]]
 
         # Add other parameters
         params_def = config.get("params", {})
@@ -132,7 +141,8 @@ class APIClient:
         model_key: str,
         params: dict,
         image_paths: Optional[list] = None,
-        model_config: Optional[dict] = None
+        model_config: Optional[dict] = None,
+        extra_images: Optional[dict] = None
     ) -> Tuple[bool, str, dict]:
         """
         Get a preview of the request that would be sent.
@@ -142,6 +152,7 @@ class APIClient:
             params: Request parameters
             image_paths: List of image paths
             model_config: Optional model config (with site-specific overrides)
+            extra_images: Optional dict of extra image parameters
 
         Returns:
             Tuple of (success, error_message, request_info)
@@ -154,7 +165,7 @@ class APIClient:
             return False, f"Unknown model: {model_key}", {}
 
         url, headers, body = self._build_request_body(
-            model_key, params, image_paths, config
+            model_key, params, image_paths, config, extra_images
         )
 
         # Create a display-friendly version of body (truncate base64 images)
@@ -204,7 +215,8 @@ class APIClient:
         model_key: str,
         params: dict,
         image_paths: Optional[list] = None,
-        model_config: Optional[dict] = None
+        model_config: Optional[dict] = None,
+        extra_images: Optional[dict] = None
     ) -> Tuple[bool, str, Optional[str]]:
         """
         Submit a video generation task
@@ -214,6 +226,7 @@ class APIClient:
             params: Request parameters
             image_paths: List of image paths (can be empty, single, or multiple)
             model_config: Optional model config (with site-specific overrides)
+            extra_images: Optional dict of extra image parameters
 
         Returns:
             Tuple of (success, message, task_id)
@@ -226,7 +239,7 @@ class APIClient:
             return False, f"Unknown model: {model_key}", None
 
         url, headers, body = self._build_request_body(
-            model_key, params, image_paths, config
+            model_key, params, image_paths, config, extra_images
         )
 
         try:
