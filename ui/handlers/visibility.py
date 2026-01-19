@@ -9,7 +9,7 @@ from config import MODELS
 def update_param_visibility(model_key: str):
     """Update parameter visibility based on selected model"""
     if not model_key or model_key not in MODELS:
-        return [gr.update(visible=False)] * 21
+        return [gr.update(visible=False)] * 25  # Updated count for new URL fields
 
     model_config = MODELS[model_key]
     params = model_config["params"]
@@ -34,7 +34,10 @@ def update_param_visibility(model_key: str):
     if "image" in params and not model_config.get("multi_image"):
         image_label = params["image"].get("label", "Input Image")
         updates.append(gr.update(visible=True, label=image_label))
+        # image_url - show alongside single image upload
+        updates.append(gr.update(visible=True))
     else:
+        updates.append(gr.update(visible=False))
         updates.append(gr.update(visible=False))
 
     # multi_images (multiple images) - show if model supports multi_image
@@ -42,7 +45,10 @@ def update_param_visibility(model_key: str):
         image_label = params["image"].get("label", "Input Images")
         max_images = model_config.get("max_images", 10)
         updates.append(gr.update(visible=True, label=f"{image_label} (最多{max_images}张)"))
+        # multi_images_url - show alongside multi image upload
+        updates.append(gr.update(visible=True))
     else:
+        updates.append(gr.update(visible=False))
         updates.append(gr.update(visible=False))
 
     # model_name / model (skip hidden type)
@@ -152,7 +158,10 @@ def update_param_visibility(model_key: str):
     if "last_frame" in params:
         last_frame_label = params["last_frame"].get("label", "Last Frame")
         updates.append(gr.update(visible=True, label=last_frame_label))
+        # last_frame_url - show alongside last_frame upload
+        updates.append(gr.update(visible=True))
     else:
+        updates.append(gr.update(visible=False))
         updates.append(gr.update(visible=False))
 
     # reference_images (veo3)
@@ -160,7 +169,10 @@ def update_param_visibility(model_key: str):
         ref_images_label = params["reference_images"].get("label", "Reference Images")
         max_images = params["reference_images"].get("max_images", 3)
         updates.append(gr.update(visible=True, label=f"{ref_images_label} (最多{max_images}张)"))
+        # reference_images_url - show alongside reference_images upload
+        updates.append(gr.update(visible=True))
     else:
+        updates.append(gr.update(visible=False))
         updates.append(gr.update(visible=False))
 
     return updates

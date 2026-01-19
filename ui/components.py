@@ -209,6 +209,12 @@ def create_ui():
                         visible=False
                     )
 
+                    image_url = gr.Textbox(
+                        label="Image URL (可选，优先于上传)",
+                        placeholder="https://example.com/image.jpg 或 Google Drive 共享链接",
+                        visible=False
+                    )
+
                     # Multi-image upload for models that support it
                     multi_images = gr.Gallery(
                         label="Input Images (Multiple)",
@@ -218,6 +224,13 @@ def create_ui():
                         height="auto",
                         object_fit="contain",
                         interactive=True,
+                        visible=False
+                    )
+
+                    multi_images_url = gr.Textbox(
+                        label="Image URLs (多个URL用换行分隔，优先于上传)",
+                        placeholder="支持 Google Drive 共享链接，每行一个URL",
+                        lines=3,
                         visible=False
                     )
 
@@ -278,6 +291,7 @@ def create_ui():
 
                     audio_url = gr.Textbox(
                         label="Audio URL",
+                        placeholder="支持 Google Drive 共享链接",
                         visible=False
                     )
 
@@ -310,6 +324,12 @@ def create_ui():
                         visible=False
                     )
 
+                    last_frame_url = gr.Textbox(
+                        label="Last Frame URL (可选，优先于上传)",
+                        placeholder="支持 Google Drive 共享链接",
+                        visible=False
+                    )
+
                     reference_images = gr.Gallery(
                         label="Reference Images",
                         show_label=True,
@@ -318,6 +338,13 @@ def create_ui():
                         height="auto",
                         object_fit="contain",
                         interactive=True,
+                        visible=False
+                    )
+
+                    reference_images_url = gr.Textbox(
+                        label="Reference Images URLs (多个URL用换行分隔，优先于上传)",
+                        placeholder="支持 Google Drive 共享链接，每行一个URL",
+                        lines=2,
                         visible=False
                     )
 
@@ -406,11 +433,11 @@ def create_ui():
             fn=update_param_visibility,
             inputs=[model_dropdown],
             outputs=[
-                prompt, negative_prompt, image, multi_images,
+                prompt, negative_prompt, image, image_url, multi_images, multi_images_url,
                 model_name, mode, aspect_ratio, duration,
                 resolution, size, seconds, cfg_scale, video_type,
                 audio, audio_url, prompt_extend, seed, n_images, shot_type,
-                last_frame, reference_images
+                last_frame, last_frame_url, reference_images, reference_images_url
             ]
         )
 
@@ -418,11 +445,11 @@ def create_ui():
         submit_btn.click(
             fn=submit_task,
             inputs=[
-                model_dropdown, prompt, negative_prompt, image, multi_images,
+                model_dropdown, prompt, negative_prompt, image, image_url, multi_images, multi_images_url,
                 model_name, mode, aspect_ratio, duration, resolution,
                 size, seconds, cfg_scale, video_type,
                 audio, audio_url, prompt_extend, seed, n_images, shot_type,
-                last_frame, reference_images,
+                last_frame, last_frame_url, reference_images, reference_images_url,
                 api_token, debug_mode, site_selector, proxy_input
             ],
             outputs=[

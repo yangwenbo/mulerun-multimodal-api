@@ -11,7 +11,7 @@ from core.database import (
     update_task_api_id,
     update_task_status,
 )
-from ui.helpers import refresh_task_table, get_stats_text, build_params
+from ui.helpers import refresh_task_table, get_stats_text, build_params, process_image_url, process_image_urls
 
 
 def submit_task(
@@ -19,7 +19,9 @@ def submit_task(
     prompt: str,
     negative_prompt: str,
     image,
+    image_url: str,
     multi_images,
+    multi_images_url: str,
     model_name: str,
     mode: str,
     aspect_ratio: str,
@@ -36,7 +38,9 @@ def submit_task(
     n_images: str,
     shot_type: str,
     last_frame,
+    last_frame_url: str,
     reference_images,
+    reference_images_url: str,
     api_token: str,
     debug_mode: bool,
     site_key: str,
@@ -77,15 +81,16 @@ def submit_task(
                 gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
 
     # Determine image paths based on model type (single vs multi-image)
+    # URL input takes priority over file upload
+    # Google Drive URLs are automatically converted to direct links
     is_multi_image = model_config.get("multi_image", False)
     if is_multi_image:
-        # Multi-image model: use multi_images (from Gallery component)
-        if "image" in params_def and params_def["image"].get("required") and not multi_images:
-            return ("At least one image is required for this model", refresh_task_table(site_key), get_stats_text(site_key),
-                    gr.update(visible=False, value=""), None,
-                    gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
-        # Extract file paths from multi_images
-        if multi_images:
+        # Multi-image model: URL takes priority, then Gallery upload
+        if multi_images_url and multi_images_url.strip():
+            # Parse URLs from text (one per line) and process Google Drive links
+            image_paths = process_image_urls([url.strip() for url in multi_images_url.strip().split('\n') if url.strip()])
+        elif multi_images:
+            # Extract file paths from multi_images Gallery
             image_paths = []
             for item in multi_images:
                 if isinstance(item, tuple):
@@ -98,20 +103,41 @@ def submit_task(
                     image_paths.append(str(item))
         else:
             image_paths = []
+
+        # Check required
+        if "image" in params_def and params_def["image"].get("required") and not image_paths:
+            return ("At least one image is required for this model", refresh_task_table(site_key), get_stats_text(site_key),
+                    gr.update(visible=False, value=""), None,
+                    gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
     else:
-        # Single image model
-        if "image" in params_def and params_def["image"].get("required") and not image:
+        # Single image model: URL takes priority
+        if image_url and image_url.strip():
+            # Process Google Drive link
+            image_paths = [process_image_url(image_url.strip())]
+        elif image:
+            image_paths = [image]
+        else:
+            image_paths = []
+
+        # Check required
+        if "image" in params_def and params_def["image"].get("required") and not image_paths:
             return ("Image is required for this model", refresh_task_table(site_key), get_stats_text(site_key),
                     gr.update(visible=False, value=""), None,
                     gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
-        image_paths = [image] if image else []
 
-    # Handle last_frame (veo3 interpolation)
-    last_frame_path = last_frame if last_frame else None
+    # Handle last_frame (veo3 interpolation) - URL takes priority
+    if last_frame_url and last_frame_url.strip():
+        # Process Google Drive link
+        last_frame_path = process_image_url(last_frame_url.strip())
+    else:
+        last_frame_path = last_frame if last_frame else None
 
-    # Handle reference_images (veo3)
-    reference_image_paths = []
-    if reference_images:
+    # Handle reference_images (veo3) - URL takes priority
+    if reference_images_url and reference_images_url.strip():
+        # Process Google Drive links
+        reference_image_paths = process_image_urls([url.strip() for url in reference_images_url.strip().split('\n') if url.strip()])
+    elif reference_images:
+        reference_image_paths = []
         for item in reference_images:
             if isinstance(item, tuple):
                 reference_image_paths.append(item[0])
@@ -121,6 +147,8 @@ def submit_task(
                 reference_image_paths.append(item.name)
             else:
                 reference_image_paths.append(str(item))
+    else:
+        reference_image_paths = []
 
     # Build params
     params = build_params(

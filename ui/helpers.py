@@ -1,9 +1,73 @@
 """
 UI Helper Functions
 """
+import re
 import json
 from config import MODELS, API_SITES, get_models_for_site
 from core.database import get_all_tasks, get_task_stats
+
+
+def convert_google_drive_url(url: str) -> str:
+    """
+    Convert Google Drive sharing link to direct access URL.
+
+    Supports formats:
+    - https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+    - https://drive.google.com/file/d/FILE_ID/view
+    - https://drive.google.com/open?id=FILE_ID
+
+    Returns direct link:
+    - https://drive.google.com/uc?export=view&id=FILE_ID
+
+    If not a Google Drive link, returns the original URL unchanged.
+    """
+    if not url:
+        return url
+
+    url = url.strip()
+
+    # Pattern 1: /file/d/FILE_ID/view
+    match = re.search(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)', url)
+    if match:
+        file_id = match.group(1)
+        return f"https://drive.google.com/uc?export=view&id={file_id}"
+
+    # Pattern 2: /open?id=FILE_ID
+    match = re.search(r'drive\.google\.com/open\?id=([a-zA-Z0-9_-]+)', url)
+    if match:
+        file_id = match.group(1)
+        return f"https://drive.google.com/uc?export=view&id={file_id}"
+
+    # Pattern 3: /uc?id=FILE_ID (already a direct link format, but ensure export=view)
+    match = re.search(r'drive\.google\.com/uc\?.*id=([a-zA-Z0-9_-]+)', url)
+    if match:
+        file_id = match.group(1)
+        return f"https://drive.google.com/uc?export=view&id={file_id}"
+
+    # Not a Google Drive link, return unchanged
+    return url
+
+
+def process_image_url(url: str) -> str:
+    """
+    Process image URL, converting Google Drive links to direct URLs.
+    """
+    return convert_google_drive_url(url)
+
+
+def process_image_urls(urls: list) -> list:
+    """
+    Process a list of image URLs, converting any Google Drive links.
+    """
+    return [process_image_url(url) for url in urls]
+
+
+def process_google_drive_url(url: str) -> str:
+    """
+    Process any URL, converting Google Drive links to direct URLs.
+    Alias for convert_google_drive_url, can be used for audio/video URLs too.
+    """
+    return convert_google_drive_url(url)
 
 
 def get_model_choices():
@@ -146,7 +210,8 @@ def build_params(
     if audio and "audio" in params_def:
         params["audio"] = audio
     if audio_url and audio_url.strip() and "audio_url" in params_def:
-        params["audio_url"] = audio_url.strip()
+        # Process Google Drive links for audio URL
+        params["audio_url"] = process_google_drive_url(audio_url.strip())
     if prompt_extend and "prompt_extend" in params_def:
         params["prompt_extend"] = prompt_extend
     if seed and seed.strip() and "seed" in params_def:
