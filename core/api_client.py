@@ -4,15 +4,25 @@ API Client module for video generation services
 import base64
 import requests
 from typing import Optional, Tuple
-from config import API_BASE_URL, API_TOKEN, MODELS
+from config import API_BASE_URL, API_TOKEN, API_PROXY, MODELS
 
 
 class APIClient:
     """Unified API client for all video generation services"""
 
-    def __init__(self, token: Optional[str] = None, base_url: Optional[str] = None):
+    def __init__(self, token: Optional[str] = None, base_url: Optional[str] = None, proxy: Optional[str] = None):
         self.token = token or API_TOKEN
         self.base_url = base_url or API_BASE_URL
+        self.proxy = proxy if proxy else API_PROXY
+
+    def _get_proxies(self) -> Optional[dict]:
+        """Get proxy configuration for requests"""
+        if self.proxy:
+            return {
+                "http": self.proxy,
+                "https": self.proxy
+            }
+        return None
 
     def _get_headers(self) -> dict:
         """Get request headers"""
@@ -247,7 +257,8 @@ class APIClient:
                 url,
                 headers=headers,
                 json=body,
-                timeout=(30, 300)  # (connect_timeout, read_timeout) - increased for large image uploads
+                timeout=(60, 600),  # (connect_timeout, read_timeout) - increased for large image uploads
+                proxies=self._get_proxies()
             )
 
             if response.status_code in (200, 202):
@@ -309,7 +320,8 @@ class APIClient:
             response = requests.get(
                 url,
                 headers=self._get_headers(),
-                timeout=30
+                timeout=30,
+                proxies=self._get_proxies()
             )
 
             if response.status_code in (200, 202):

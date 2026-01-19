@@ -27,7 +27,7 @@ def _resolve_task(task_id: int, task_uuid: str):
     return task
 
 
-def manual_poll(task_id: int, task_uuid: str, api_token: str, site_key: str):
+def manual_poll(task_id: int, task_uuid: str, api_token: str, site_key: str, proxy: str = ""):
     """Manually poll a task"""
     if not api_token:
         return "Please enter API Token", refresh_task_table(site_key), get_stats_text(site_key)
@@ -47,7 +47,7 @@ def manual_poll(task_id: int, task_uuid: str, api_token: str, site_key: str):
     site_models = get_models_for_site(site_key)
     model_config = site_models.get(task["model_key"])
 
-    client = APIClient(api_token, base_url)
+    client = APIClient(api_token, base_url, proxy)
     status, videos, error = client.get_task_status(task["model_key"], task["task_id"], model_config)
 
     if status == "completed":

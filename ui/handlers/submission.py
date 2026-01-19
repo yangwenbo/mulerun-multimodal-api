@@ -39,10 +39,11 @@ def submit_task(
     reference_images,
     api_token: str,
     debug_mode: bool,
-    site_key: str
+    site_key: str,
+    proxy: str = ""
 ):
     """Submit a video generation task (or preview in debug mode)"""
-    print(f"[DEBUG] submit_task called with model_key: {model_key}, site: {site_key}")
+    print(f"[DEBUG] submit_task called with model_key: {model_key}, site: {site_key}, proxy: {proxy}")
 
     # Get site configuration
     site_config = API_SITES.get(site_key, API_SITES["mulerun"])
@@ -135,7 +136,7 @@ def submit_task(
     if reference_image_paths:
         extra_images["reference_images"] = reference_image_paths
 
-    client = APIClient(api_token, base_url)
+    client = APIClient(api_token, base_url, proxy)
 
     # Debug mode: show preview and wait for confirmation
     if debug_mode:
@@ -170,7 +171,8 @@ def submit_task(
             "api_token": api_token,
             "base_url": base_url,
             "model_config": model_config,
-            "site": site_key
+            "site": site_key,
+            "proxy": proxy
         }
 
         return ("Review the request below and click 'Confirm Send' to proceed",
@@ -179,10 +181,10 @@ def submit_task(
                 gr.update(visible=False), gr.update(visible=True), gr.update(visible=True))
 
     # Normal mode: submit directly
-    return _do_submit(model_key, model_config["name"], prompt, params, image_paths, extra_images, api_token, base_url, model_config, site_key)
+    return _do_submit(model_key, model_config["name"], prompt, params, image_paths, extra_images, api_token, base_url, model_config, site_key, proxy)
 
 
-def _do_submit(model_key, model_name, prompt, params, image_paths, extra_images, api_token, base_url, model_config, site):
+def _do_submit(model_key, model_name, prompt, params, image_paths, extra_images, api_token, base_url, model_config, site, proxy=""):
     """Actually submit the task to API"""
     # Create local task record first
     image_path_for_db = ",".join(image_paths) if image_paths else None
@@ -197,7 +199,7 @@ def _do_submit(model_key, model_name, prompt, params, image_paths, extra_images,
     )
 
     # Submit to API
-    client = APIClient(api_token, base_url)
+    client = APIClient(api_token, base_url, proxy)
     success, message, api_task_id = client.submit_task(
         model_key=model_key,
         params=params,
@@ -227,6 +229,7 @@ def confirm_send(pending_request):
 
     site = pending_request.get("site", "mulerun")
     extra_images = pending_request.get("extra_images", {})
+    proxy = pending_request.get("proxy", "")
     return _do_submit(
         pending_request["model_key"],
         pending_request["model_name"],
@@ -237,7 +240,8 @@ def confirm_send(pending_request):
         pending_request["api_token"],
         pending_request["base_url"],
         pending_request["model_config"],
-        site
+        site,
+        proxy
     )
 
 

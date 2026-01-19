@@ -42,3 +42,9 @@ DB_PATH = "video_tasks.db"
 MEDIA_DIR = "media"              # 本地媒体存储目录
 AUTO_DOWNLOAD_MEDIA = True       # 是否自动下载媒体文件到本地
 DOWNLOAD_TIMEOUT = 120           # 下载超时时间（秒）
+
+# Proxy Configuration
+# 支持 HTTP/HTTPS/SOCKS5 代理，例如:
+# http://127.0.0.1:7890
+# socks5://127.0.0.1:1080
+API_PROXY = os.environ.get("API_PROXY", "")

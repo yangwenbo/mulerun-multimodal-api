@@ -6,7 +6,7 @@ import time
 import logging
 from typing import Callable, Optional
 
-from config import POLL_INTERVAL, MAX_POLL_ATTEMPTS, API_SITES, MODELS, get_models_for_site
+from config import POLL_INTERVAL, MAX_POLL_ATTEMPTS, API_SITES, MODELS, get_models_for_site, API_PROXY
 from core.database import get_pending_tasks, update_task_status, update_task_result
 from core.api_client import APIClient
 from core.media_manager import media_manager
@@ -107,7 +107,7 @@ class TaskPoller:
             model_config = site_models.get(model_key)
 
             # Poll the task with task-specific token and site base_url
-            client = APIClient(api_token, base_url)
+            client = APIClient(api_token, base_url, API_PROXY)
             status, videos, error = client.get_task_status(model_key, api_task_id, model_config)
             self._poll_counts[poll_key] = poll_count + 1
 
@@ -153,7 +153,7 @@ class TaskPoller:
         site_models = get_models_for_site(site)
         model_config = site_models.get(model_key)
 
-        client = APIClient(api_token, base_url)
+        client = APIClient(api_token, base_url, API_PROXY)
         return client.get_task_status(model_key, api_task_id, model_config)
 
 

@@ -3,7 +3,7 @@ UI Components - Gradio UI Builder
 """
 import gradio as gr
 
-from config import API_SITES
+from config import API_SITES, API_PROXY
 from ui.helpers import get_model_choices_by_type, refresh_task_table, get_stats_text
 from ui.handlers import (
     update_site_selection,
@@ -153,6 +153,14 @@ def create_ui():
                     label="API Token",
                     placeholder="Enter your API token",
                     value=API_SITES["mulerun"]["token"]
+                )
+
+                # Proxy Configuration
+                proxy_input = gr.Textbox(
+                    label="Proxy (可选)",
+                    placeholder="http://127.0.0.1:7890 或 socks5://127.0.0.1:1080",
+                    value=API_PROXY,
+                    info="留空则不使用代理"
                 )
 
                 # Debug Mode
@@ -415,7 +423,7 @@ def create_ui():
                 size, seconds, cfg_scale, video_type,
                 audio, audio_url, prompt_extend, seed, n_images, shot_type,
                 last_frame, reference_images,
-                api_token, debug_mode, site_selector
+                api_token, debug_mode, site_selector, proxy_input
             ],
             outputs=[
                 submit_result, task_table, stats_text,
@@ -456,7 +464,7 @@ def create_ui():
         # Poll task
         poll_btn.click(
             fn=manual_poll,
-            inputs=[selected_task_id, selected_task_uuid, api_token, site_selector],
+            inputs=[selected_task_id, selected_task_uuid, api_token, site_selector, proxy_input],
             outputs=[submit_result, task_table, stats_text]
         )
 
