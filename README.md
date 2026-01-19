@@ -102,7 +102,7 @@ http://127.0.0.1:7860
 |-------|-----|------|------|
 | Kling Text-to-Video | `kling_text2video` | text2video | MuleRun |
 | Kling Image-to-Video | `kling_image2video` | image2video | MuleRun |
-| Midjourney Video Diffusion | `midjourney_video` | text2video | MuleRun |
+| Midjourney Video Diffusion | `midjourney_video` | text2video | MuleRun, MuleRouter |
 | OpenAI Sora | `sora` | text2video | MuleRun |
 | Google Veo3 | `veo3` | text2video | MuleRun |
 | Wan2.5 Text-to-Video | `wan2_5_t2v_preview` | text2video | MuleRun |
@@ -116,13 +116,13 @@ http://127.0.0.1:7860
 
 | Model | Key | Type | Site |
 |-------|-----|------|------|
-| Midjourney Image Generation | `midjourney_diffusion` | text2image | MuleRun |
+| Midjourney Image Generation | `midjourney_diffusion` | text2image | MuleRun, MuleRouter |
+| Nano Banana Pro Generation | `nano_banana_pro_generation` | text2image | MuleRun, MuleRouter |
+| Nano Banana Pro Edit | `nano_banana_pro_edit` | image2image | MuleRun, MuleRouter |
 | Wan2.5 Image Generation | `wan2_5_t2i_preview` | text2image | MuleRun |
 | Wan2.5 Image Edit | `wan2_5_i2i_preview` | image2image | MuleRun |
 | Wan2.6 Image Generation | `wan2_6_t2i` | text2image | MuleRouter |
 | Wan2.6 Image Edit | `wan2_6_i2i` | image2image | MuleRouter |
-| Nano Banana Pro Generation | `nano_banana_pro_generation` | text2image | MuleRouter |
-| Nano Banana Pro Edit | `nano_banana_pro_edit` | image2image | MuleRouter |
 
 ---
 
@@ -159,8 +159,9 @@ The Web UI consists of two main sections:
 #### Step 1: Configure API Settings
 
 1. **Select API Site**: Click the "API Site" dropdown
-   - Choose "MuleRun (api.mulerun.com)" for Kling, Midjourney, Sora, Veo3, Wan2.5 models
-   - Choose "MuleRouter (api.mulerouter.ai)" for Wan2.6, Nano Banana Pro models
+   - Choose "MuleRun (api.mulerun.com)" for Kling, Sora, Veo3, Wan2.5 models
+   - Choose "MuleRouter (api.mulerouter.ai)" for Wan2.6 models
+   - Note: Midjourney and Nano Banana Pro are available on both sites
 
 2. **Enter API Token**: Type your API token in the "API Token" text field
    - The token is required for all API requests
