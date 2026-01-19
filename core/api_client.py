@@ -338,13 +338,23 @@ class APIClient:
                     return "failed", None, error_msg
                 else:
                     return status, None, None
+            elif response.status_code in (404, 500, 502, 503, 504):
+                # Treat temporary errors as still processing, let polling retry
+                # 404: task may not be ready yet or temporary sync issue
+                # 5xx: server errors, may recover
+                return "processing", None, None
+            elif response.status_code in (401, 403):
+                # Authentication/authorization errors should fail immediately
+                return "failed", None, f"API auth error: {response.status_code}"
             else:
+                # Other errors (400, etc.) are likely permanent
                 return "failed", None, f"API error: {response.status_code}"
 
         except requests.exceptions.Timeout:
             return "processing", None, None  # Treat timeout as still processing
         except requests.exceptions.RequestException as e:
-            return "failed", None, f"Request failed: {str(e)}"
+            # Treat connection errors as temporary, continue polling
+            return "processing", None, None
 
 
 # Global client instance

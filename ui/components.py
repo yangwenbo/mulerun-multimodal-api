@@ -129,7 +129,7 @@ def create_ui():
         <div class="title-container">
             <h1>Mule Multimodal Studio</h1>
             <div>
-            Multiple Multimodal API of Kling, Midjourney, Google Veo3, OpenAI Sora2, Alibaba Wan2.5/2.6 and Google Nano Banana Pro to generate Images and Videos
+            Multiple Multimodal API of <b>Kling</b>, <b>Midjourney</b>, <b>Google Veo3</b>, <b>OpenAI Sora2</b>, <b>Alibaba Wan2.5/2.6</b> and <b>Google Nano Banana Pro</b> to generate Images and Videos
             </div>
             
         </div>
