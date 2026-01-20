@@ -19,6 +19,24 @@ from .database import (
     get_task_stats,
 )
 from .poller import TaskPoller, task_poller
+from .ai_controller import (
+    AICommandQueue,
+    AIAction,
+    ActionType,
+    get_command_queue,
+    create_action,
+    parse_ai_response,
+    queue_actions_from_response,
+    create_status_action,
+    create_highlight_action,
+    create_click_action,
+    create_select_action,
+    create_type_action,
+    create_clear_action,
+    create_wait_action,
+    ELEMENT_IDS,
+    get_system_prompt_for_ui,
+)
 
 __all__ = [
     # API Client
@@ -41,4 +59,21 @@ __all__ = [
     # Poller
     "TaskPoller",
     "task_poller",
+    # AI Controller
+    "AICommandQueue",
+    "AIAction",
+    "ActionType",
+    "get_command_queue",
+    "create_action",
+    "parse_ai_response",
+    "queue_actions_from_response",
+    "create_status_action",
+    "create_highlight_action",
+    "create_click_action",
+    "create_select_action",
+    "create_type_action",
+    "create_clear_action",
+    "create_wait_action",
+    "ELEMENT_IDS",
+    "get_system_prompt_for_ui",
 ]

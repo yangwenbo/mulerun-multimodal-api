@@ -6,6 +6,7 @@ This package contains handler functions split by functionality:
 - submission.py: Task submission handlers
 - task_management.py: Task management handlers (poll, delete, view)
 - visibility.py: UI parameter visibility control
+- ai_chat.py: AI chat and visual control handlers
 """
 
 from ui.handlers.site import (
@@ -30,6 +31,13 @@ from ui.handlers.visibility import (
     update_param_visibility,
 )
 
+from ui.handlers.ai_chat import (
+    process_ai_chat_message,
+    process_ai_chat_sync,
+    clear_chat_history,
+    get_example_prompts,
+)
+
 __all__ = [
     # Site handlers
     "update_model_dropdown",
@@ -45,4 +53,9 @@ __all__ = [
     "delete_selected_task",
     # Visibility handlers
     "update_param_visibility",
+    # AI Chat handlers
+    "process_ai_chat_message",
+    "process_ai_chat_sync",
+    "clear_chat_history",
+    "get_example_prompts",
 ]
