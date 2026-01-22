@@ -3,7 +3,7 @@ Kling model configurations
 """
 
 KLING_TEXT2VIDEO = {
-    "name": "Kling Text-to-Video",
+    "name": "Kling 文生视频",
     "type": "text2video",
     "post_endpoint": "/vendors/kling/v1/videos/text2video",
     "get_endpoint": "/vendors/kling/v1/videos/text2video/{task_id}",
@@ -51,7 +51,7 @@ KLING_TEXT2VIDEO = {
 }
 
 KLING_IMAGE2VIDEO = {
-    "name": "Kling Image-to-Video",
+    "name": "Kling 图生视频",
     "type": "image2video",
     "post_endpoint": "/vendors/kling/v1/videos/image2video",
     "get_endpoint": "/vendors/kling/v1/videos/image2video/{task_id}",

@@ -34,6 +34,16 @@ SITE_MODELS = {
         "nano_banana_pro_edit": {},
         "wan2_5_t2v_preview": {},
         "wan2_5_i2v_preview": {},
+        # Wan2.6 models
+        "wan2_6_t2v": {},
+        "wan2_6_i2v": {},
+        "wan2_6_t2i": {},
+        "wan2_6_i2i": {},
+        "wan2_6_t2v_spark": {},
+        "wan2_6_i2v_spark": {},
+        # Qwen models
+        "qwen_image_max": {},
+        "qwen_image_edit_plus": {},
     },
     "mulerouter": {
         # MuleRouter 支持的模型
@@ -47,6 +57,8 @@ SITE_MODELS = {
         "wan2_6_i2v_spark": {},
         "wan2_6_t2i": {},
         "wan2_6_i2i": {},
+        "qwen_image_max": {},
+        "qwen_image_edit_plus": {},
     }
 }
 

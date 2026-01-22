@@ -5,15 +5,15 @@ Alibaba Wan2.5 model configurations
 WAN2_5_T2I_PREVIEW = {
     "name": "Wan2.5 图片生成",
     "type": "text2image",
-    "post_endpoint": "/vendors/alibaba/v1/wan2/image/generation",
-    "get_endpoint": "/vendors/alibaba/v1/wan2/image/generation/{task_id}",
+    "post_endpoint": "/vendors/alibaba/v1/wan2.5-t2i-preview/generation",
+    "get_endpoint": "/vendors/alibaba/v1/wan2.5-t2i-preview/generation/{task_id}",
     "result_key": "images",
     "params": {
-        "model": {
-            "type": "hidden",
-            "required": True,
-            "default": "wan2.5-t2i-preview"
-        },
+        # "model": {
+        #     "type": "hidden",
+        #     "required": True,
+        #     "default": "wan2.5-t2i-preview"
+        # },
         "prompt": {"type": "text", "required": True, "max_length": 2000, "label": "Prompt (图片描述，最多2000字符)"},
         "negative_prompt": {"type": "text", "required": False, "max_length": 500, "label": "Negative Prompt (不希望出现的内容，最多500字符)"},
         "size": {
@@ -51,18 +51,18 @@ WAN2_5_T2I_PREVIEW = {
 WAN2_5_I2I_PREVIEW = {
     "name": "Wan2.5 图片编辑",
     "type": "image2image",
-    "post_endpoint": "/vendors/alibaba/v1/wan2/image/edit",
-    "get_endpoint": "/vendors/alibaba/v1/wan2/image/edit/{task_id}",
+    "post_endpoint": "/vendors/alibaba/v1/wan2.5-i2i-preview/edit",
+    "get_endpoint": "/vendors/alibaba/v1/wan2.5-i2i-preview/edit/{task_id}",
     "result_key": "images",
     "image_as_array": True,
     "multi_image": True,
     "max_images": 3,
     "params": {
-        "model": {
-            "type": "hidden",
-            "required": True,
-            "default": "wan2.5-i2i-preview"
-        },
+        # "model": {
+        #     "type": "hidden",
+        #     "required": True,
+        #     "default": "wan2.5-i2i-preview"
+        # },
         "image": {"type": "image", "required": True, "label": "Input Images (参考图片，1-3张，JPEG/PNG/BMP/WEBP，384-5000px，≤10MB)"},
         "prompt": {"type": "text", "required": True, "max_length": 2000, "label": "Prompt (编辑指令，最多2000字符)"},
         "negative_prompt": {"type": "text", "required": False, "max_length": 500, "label": "Negative Prompt (不希望出现的内容，最多500字符)"},
@@ -90,16 +90,16 @@ WAN2_5_I2I_PREVIEW = {
 }
 
 WAN2_5_T2V_PREVIEW = {
-    "name": "Wan2.5 Text-to-Video Preview",
+    "name": "Wan2.5 Preview 文生视频",
     "type": "text2video",
-    "post_endpoint": "/vendors/alibaba/v1/wan2/video/generation",
-    "get_endpoint": "/vendors/alibaba/v1/wan2/video/generation/{task_id}",
+    "post_endpoint": "/vendors/alibaba/v1/wan2.5-t2v-preview/generation",
+    "get_endpoint": "/vendors/alibaba/v1/wan2.5-t2v-preview/generation/{task_id}",
     "params": {
-        "model": {
-            "type": "hidden",
-            "required": True,
-            "default": "wan2.5-t2v-preview"
-        },
+        # "model": {
+        #     "type": "hidden",
+        #     "required": True,
+        #     "default": "wan2.5-t2v-preview"
+        # },
         "prompt": {"type": "text", "required": True, "max_length": 2000, "label": "Prompt (视频内容描述，最多2000字符)"},
         "negative_prompt": {"type": "text", "required": False, "max_length": 500, "label": "Negative Prompt (不希望出现的内容，最多500字符)"},
         "size": {
@@ -142,16 +142,16 @@ WAN2_5_T2V_PREVIEW = {
 }
 
 WAN2_5_I2V_PREVIEW = {
-    "name": "Wan2.5 Image-to-Video Preview",
+    "name": "Wan2.5 Preview 图生视频",
     "type": "image2video",
-    "post_endpoint": "/vendors/alibaba/v1/wan2/video/generation",
-    "get_endpoint": "/vendors/alibaba/v1/wan2/video/generation/{task_id}",
+    "post_endpoint": "/vendors/alibaba/v1/wan2.5-i2v-preview/generation",
+    "get_endpoint": "/vendors/alibaba/v1/wan2.5-i2v-preview/generation/{task_id}",
     "params": {
-        "model": {
-            "type": "hidden",
-            "required": True,
-            "default": "wan2.5-i2v-preview"
-        },
+        # "model": {
+        #     "type": "hidden",
+        #     "required": True,
+        #     "default": "wan2.5-i2v-preview"
+        # },
         "image": {"type": "image", "required": True, "label": "Input Image (首帧图片，JPEG/PNG/BMP/WEBP，360-2000px，≤10MB)"},
         "prompt": {"type": "text", "required": True, "max_length": 2000, "label": "Prompt (运动/故事描述，最多2000字符)"},
         "negative_prompt": {"type": "text", "required": False, "max_length": 500, "label": "Negative Prompt (不希望出现的内容，最多500字符)"},

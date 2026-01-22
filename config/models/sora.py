@@ -3,7 +3,7 @@ OpenAI Sora model configuration
 """
 
 SORA = {
-    "name": "OpenAI Sora",
+    "name": "OpenAI Sora2 视频生成",
     "type": "text2video",
     "post_endpoint": "/vendors/openai/v1/sora/generation",
     "get_endpoint": "/vendors/openai/v1/sora/generation/{task_id}",

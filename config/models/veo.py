@@ -3,7 +3,7 @@ Google Veo model configuration
 """
 
 VEO3 = {
-    "name": "Google Veo3",
+    "name": "Google Veo3 视频生成",
     "type": "text2video",
     "post_endpoint": "/vendors/google/v1/veo/generation",
     "get_endpoint": "/vendors/google/v1/veo/generation/{task_id}",

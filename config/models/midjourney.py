@@ -3,7 +3,7 @@ Midjourney model configurations
 """
 
 MIDJOURNEY_VIDEO = {
-    "name": "Midjourney Video Diffusion",
+    "name": "MidJourney 视频生成",
     "type": "text2video",
     "post_endpoint": "/vendors/midjourney/v1/tob/video-diffusion",
     "get_endpoint": "/vendors/midjourney/v1/tob/video-diffusion/{task_id}",

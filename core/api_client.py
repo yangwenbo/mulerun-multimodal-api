@@ -338,10 +338,21 @@ class APIClient:
                     return "failed", None, error_msg
                 else:
                     return status, None, None
-            elif response.status_code in (404, 500, 502, 503, 504):
-                # Treat temporary errors as still processing, let polling retry
-                # 404: task may not be ready yet or temporary sync issue
-                # 5xx: server errors, may recover
+            elif response.status_code == 404:
+                # Check if task definitively does not exist
+                try:
+                    error_data = response.json()
+                    error_code = error_data.get("error_code")
+                    detail = error_data.get("detail", "")
+                    # error_code 2005 or "does not exist" means task is permanently gone
+                    if error_code == 2005 or "does not exist" in detail.lower():
+                        return "failed", None, f"Task not found: {detail}"
+                except Exception:
+                    pass
+                # Other 404 cases: treat as temporary, continue polling
+                return "processing", None, None
+            elif response.status_code in (500, 502, 503, 504):
+                # Server errors may recover, continue polling
                 return "processing", None, None
             elif response.status_code in (401, 403):
                 # Authentication/authorization errors should fail immediately
