@@ -51,8 +51,8 @@ WAN2_5_T2I_PREVIEW = {
 WAN2_5_I2I_PREVIEW = {
     "name": "Wan2.5 图片编辑",
     "type": "image2image",
-    "post_endpoint": "/vendors/alibaba/v1/wan2.5-i2i-preview/edit",
-    "get_endpoint": "/vendors/alibaba/v1/wan2.5-i2i-preview/edit/{task_id}",
+    "post_endpoint": "/vendors/alibaba/v1/wan2.5-i2i-preview/generation",
+    "get_endpoint": "/vendors/alibaba/v1/wan2.5-i2i-preview/generation/{task_id}",
     "result_key": "images",
     "image_as_array": True,
     "multi_image": True,
