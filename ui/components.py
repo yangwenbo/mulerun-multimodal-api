@@ -91,7 +91,7 @@ def _build_header():
     <div class="title-container">
         <h1>Mule Multimodal Studio</h1>
         <div>
-        Multiple Multimodal API of <b>Kling</b>, <b>Midjourney</b>, <b>Google Veo3</b>, <b>OpenAI Sora2</b>, <b>Alibaba Wan2.5/2.6</b>, <b>Qwen Image</b> and <b>Google Nano Banana Pro</b> to generate Images and Videos
+        Multiple Multimodal API of <b>Kling</b>, <b>Midjourney</b>, <b>Google Veo3</b>, <b>Nano Banana Pro</b>, <b>OpenAI Sora2</b>, <b>Alibaba Wan2.5/2.6</b>, <b>Qwen Image</b> and to generate Images and Videos
         </div>
     </div>
     """)
@@ -486,5 +486,11 @@ def create_ui():
                 task_panel = _build_task_panel()
 
         _bind_events(sidebar, task_panel)
+
+        # 页面加载时刷新任务列表（修复刷新页面后任务不更新的问题）
+        app.load(
+            fn=lambda: (refresh_task_table("mulerun"), get_stats_text("mulerun")),
+            outputs=[task_panel.task_table, task_panel.stats_text]
+        )
 
     return app

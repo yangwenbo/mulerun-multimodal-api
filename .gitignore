@@ -19,6 +19,8 @@ ENV/
 
 # Claude
 .claude/
+CLAUDE.local.md
+CLAUDE.md
 
 # Python cache
 __pycache__/

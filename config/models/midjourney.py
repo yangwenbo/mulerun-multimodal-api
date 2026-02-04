@@ -3,12 +3,12 @@ Midjourney model configurations
 """
 
 MIDJOURNEY_VIDEO = {
-    "name": "MidJourney 视频生成",
+    "name": "MidJourney 图生视频",
     "type": "text2video",
     "post_endpoint": "/vendors/midjourney/v1/tob/video-diffusion",
     "get_endpoint": "/vendors/midjourney/v1/tob/video-diffusion/{task_id}",
     "params": {
-        "prompt": {"type": "text", "required": True, "max_length": 8192, "label": "Prompt (输入文字和图片URL，例如: a cat running https://example.com/image.jpg)"},
+        "prompt": {"type": "text", "required": True, "max_length": 8192, "label": "Prompt (必须包图片URL和文字，例如: a cat running, https://example.com/image.jpg)"},
         "video_type": {
             "type": "dropdown",
             "required": False,
