@@ -43,7 +43,9 @@ SITE_MODELS = {
         "wan2_6_i2v_spark": {},
         # Qwen models
         "qwen_image_max": {},
+        "qwen_image_max_latest": {},
         "qwen_image_edit_plus": {},
+        "qwen_image_edit_max": {},
     },
     "mulerouter": {
         # MuleRouter 支持的模型
@@ -58,7 +60,9 @@ SITE_MODELS = {
         "wan2_6_t2i": {},
         "wan2_6_i2i": {},
         "qwen_image_max": {},
+        "qwen_image_max_latest": {},
         "qwen_image_edit_plus": {},
+        "qwen_image_edit_max": {},
     }
 }
 
