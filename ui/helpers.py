@@ -160,6 +160,7 @@ def build_params(
     mode: str,
     aspect_ratio: str,
     duration: str,
+    duration_int: int,
     resolution: str,
     size: str,
     seconds: str,
@@ -170,7 +171,9 @@ def build_params(
     prompt_extend: str,
     seed: str,
     n_images: str,
-    shot_type: str = None
+    multi_shot: str = None,
+    shot_type: str = None,
+    multi_prompt: str = None
 ) -> dict:
     """Build params dict from UI inputs"""
     model_config = MODELS.get(model_key, {})
@@ -197,6 +200,8 @@ def build_params(
         params["aspect_ratio"] = aspect_ratio
     if duration and "duration" in params_def:
         params["duration"] = duration
+    if duration_int is not None and "duration_int" in params_def:
+        params["duration"] = int(duration_int)
     if resolution and "resolution" in params_def:
         params["resolution"] = resolution
     if size and "size" in params_def:
@@ -209,6 +214,9 @@ def build_params(
         params["video_type"] = video_type
     if audio and "audio" in params_def:
         params["audio"] = audio
+    # audio 组件同时用于 sound 参数（Kling v2.6/v3）
+    if audio and "sound" in params_def:
+        params["sound"] = audio
     if audio_url and audio_url.strip() and "audio_url" in params_def:
         # Process Google Drive links for audio URL
         params["audio_url"] = process_google_drive_url(audio_url.strip())
@@ -218,7 +226,32 @@ def build_params(
         params["seed"] = seed.strip()
     if n_images and "n" in params_def:
         params["n"] = n_images
-    if shot_type and "shot_type" in params_def:
+    if multi_shot and "multi_shot" in params_def:
+        # Convert string "true"/"false" to boolean
+        params["multi_shot"] = multi_shot.lower() == "true"
+    is_multi_shot = (multi_shot or "").lower() == "true"
+    # shot_type 只在 multi_shot=true 时发送
+    if is_multi_shot and shot_type and "shot_type" in params_def:
         params["shot_type"] = shot_type
+    # intelligence: 用 prompt；customize: 用 multi_prompt
+    is_intelligence = is_multi_shot and shot_type == "intelligence"
+    is_customize = is_multi_shot and shot_type == "customize"
+    if is_intelligence and prompt and "prompt" in params_def:
+        params["prompt"] = prompt  # 已在开头设置，这里确保不被遗漏
+    if is_customize and multi_prompt and multi_prompt.strip() and "multi_shot" in params_def:
+        # multi_prompt is a JSON string: [{"index":0,"prompt":"...","duration":5},...]
+        try:
+            parsed = json.loads(multi_prompt.strip())
+            if isinstance(parsed, list) and len(parsed) > 0:
+                params["multi_prompt"] = parsed
+        except (json.JSONDecodeError, ValueError):
+            pass  # Invalid JSON — skip silently; server will validate
+    # multi_shot=false 或 intelligence 模式下不发送 multi_prompt
+    if not is_customize and "multi_prompt" in params:
+        del params["multi_prompt"]
+    # intelligence 模式下不发送 prompt 以外的冲突（prompt 已在 params["prompt"] 里）
+    # customize 模式下不发送 prompt（服务端要求 multi_shot=true 时不能有 prompt）
+    if is_customize and "prompt" in params:
+        del params["prompt"]
 
     return params

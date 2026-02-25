@@ -26,6 +26,7 @@ def submit_task(
     mode: str,
     aspect_ratio: str,
     duration: str,
+    duration_int: int,
     resolution: str,
     size: str,
     seconds: str,
@@ -36,7 +37,9 @@ def submit_task(
     prompt_extend: str,
     seed: str,
     n_images: str,
+    multi_shot: str,
     shot_type: str,
+    multi_prompt: str,
     last_frame,
     last_frame_url: str,
     reference_images,
@@ -153,8 +156,8 @@ def submit_task(
     # Build params
     params = build_params(
         model_key, prompt, negative_prompt, model_name, mode, aspect_ratio,
-        duration, resolution, size, seconds, cfg_scale, video_type,
-        audio, audio_url, prompt_extend, seed, n_images, shot_type
+        duration, duration_int, resolution, size, seconds, cfg_scale, video_type,
+        audio, audio_url, prompt_extend, seed, n_images, multi_shot, shot_type, multi_prompt
     )
 
     # Create extra_images dict for special image parameters
@@ -239,13 +242,15 @@ def _do_submit(model_key, model_name, prompt, params, image_paths, extra_images,
     if success and api_task_id:
         update_task_api_id(local_id, api_task_id)
         result_msg = f"Task submitted successfully! ID: {local_id}, API Task: {api_task_id}"
+        return (result_msg, refresh_task_table(site), get_stats_text(site),
+                gr.update(visible=False, value=""), None,
+                gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
     else:
         update_task_status(local_id, "failed", message)
-        result_msg = f"Failed to submit: {message}"
-
-    return (result_msg, refresh_task_table(site), get_stats_text(site),
-            gr.update(visible=False, value=""), None,
-            gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
+        result_msg = f"Failed to submit (ID: {local_id})"
+        return (result_msg, refresh_task_table(site), get_stats_text(site),
+                gr.update(visible=True, value=message), None,
+                gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
 
 
 def confirm_send(pending_request):

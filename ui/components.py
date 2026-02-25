@@ -11,6 +11,8 @@ from ui.handlers import (
     update_site_selection,
     update_model_dropdown,
     update_param_visibility,
+    update_multi_shot,
+    update_shot_type,
     submit_task,
     confirm_send,
     cancel_send,
@@ -45,6 +47,7 @@ class SidebarComponents:
     mode: Any
     aspect_ratio: Any
     duration: Any
+    duration_int: Any
     resolution: Any
     size: Any
     seconds: Any
@@ -55,7 +58,9 @@ class SidebarComponents:
     prompt_extend: Any
     seed: Any
     n_images: Any
+    multi_shot: Any
     shot_type: Any
+    multi_prompt: Any
     last_frame: Any
     last_frame_url: Any
     reference_images: Any
@@ -191,6 +196,12 @@ def _build_sidebar() -> SidebarComponents:
         mode = gr.Dropdown(label="Mode", visible=False)
         aspect_ratio = gr.Dropdown(label="Aspect Ratio", visible=False)
         duration = gr.Dropdown(label="Duration", visible=False)
+        duration_int = gr.Number(
+            label="Duration (seconds)",
+            value=5,
+            precision=0,
+            visible=False
+        )
         resolution = gr.Dropdown(label="Resolution", visible=False)
         size = gr.Dropdown(label="Size", visible=False)
         seconds = gr.Dropdown(label="Seconds", visible=False)
@@ -213,6 +224,13 @@ def _build_sidebar() -> SidebarComponents:
         seed = gr.Textbox(label="Seed", visible=False)
         n_images = gr.Dropdown(label="Number of Images", visible=False)
         shot_type = gr.Dropdown(label="Shot Type", visible=False)
+        multi_shot = gr.Dropdown(label="Multi Shot", visible=False)
+        multi_prompt = gr.Textbox(
+            label="Multi Prompt (多镜头, JSON格式)",
+            placeholder='[{"index":0,"prompt":"镜头1描述","duration":5},{"index":1,"prompt":"镜头2描述","duration":5}]',
+            lines=4,
+            visible=False
+        )
 
         last_frame = gr.Image(
             label="Last Frame",
@@ -275,6 +293,7 @@ def _build_sidebar() -> SidebarComponents:
         mode=mode,
         aspect_ratio=aspect_ratio,
         duration=duration,
+        duration_int=duration_int,
         resolution=resolution,
         size=size,
         seconds=seconds,
@@ -285,7 +304,9 @@ def _build_sidebar() -> SidebarComponents:
         prompt_extend=prompt_extend,
         seed=seed,
         n_images=n_images,
+        multi_shot=multi_shot,
         shot_type=shot_type,
+        multi_prompt=multi_prompt,
         last_frame=last_frame,
         last_frame_url=last_frame_url,
         reference_images=reference_images,
@@ -387,12 +408,26 @@ def _bind_events(sidebar: SidebarComponents, task_panel: TaskPanelComponents):
             sidebar.image, sidebar.image_url,
             sidebar.multi_images, sidebar.multi_images_url,
             sidebar.model_name, sidebar.mode, sidebar.aspect_ratio, sidebar.duration,
+            sidebar.duration_int,
             sidebar.resolution, sidebar.size, sidebar.seconds, sidebar.cfg_scale,
             sidebar.video_type, sidebar.audio, sidebar.audio_url, sidebar.prompt_extend,
-            sidebar.seed, sidebar.n_images, sidebar.shot_type,
+            sidebar.seed, sidebar.n_images, sidebar.multi_shot, sidebar.shot_type,
+            sidebar.multi_prompt,
             sidebar.last_frame, sidebar.last_frame_url,
             sidebar.reference_images, sidebar.reference_images_url
         ]
+    )
+
+    sidebar.multi_shot.change(
+        fn=update_multi_shot,
+        inputs=[sidebar.multi_shot],
+        outputs=[sidebar.prompt, sidebar.multi_prompt]
+    )
+
+    sidebar.shot_type.change(
+        fn=update_shot_type,
+        inputs=[sidebar.shot_type, sidebar.multi_shot],
+        outputs=[sidebar.prompt, sidebar.multi_prompt]
     )
 
     sidebar.submit_btn.click(
@@ -401,9 +436,11 @@ def _bind_events(sidebar: SidebarComponents, task_panel: TaskPanelComponents):
             sidebar.model_dropdown, sidebar.prompt, sidebar.negative_prompt,
             sidebar.image, sidebar.image_url, sidebar.multi_images, sidebar.multi_images_url,
             sidebar.model_name, sidebar.mode, sidebar.aspect_ratio, sidebar.duration,
+            sidebar.duration_int,
             sidebar.resolution, sidebar.size, sidebar.seconds, sidebar.cfg_scale,
             sidebar.video_type, sidebar.audio, sidebar.audio_url, sidebar.prompt_extend,
-            sidebar.seed, sidebar.n_images, sidebar.shot_type,
+            sidebar.seed, sidebar.n_images, sidebar.multi_shot, sidebar.shot_type,
+            sidebar.multi_prompt,
             sidebar.last_frame, sidebar.last_frame_url,
             sidebar.reference_images, sidebar.reference_images_url,
             sidebar.api_token, sidebar.debug_mode, sidebar.site_selector, sidebar.proxy_input

@@ -22,8 +22,13 @@ from .models import MODELS
 SITE_MODELS = {
     "mulerun": {
         # MuleRun 支持所有模型，使用默认endpoint
-        "kling_text2video": {},
-        "kling_image2video": {},
+        # Kling models (new versions)
+        "kling_text2video_v25_turbo": {},
+        "kling_text2video_v26": {},
+        "kling_text2video_v3": {},
+        "kling_image2video_v25_turbo": {},
+        "kling_image2video_v26": {},
+        "kling_image2video_v3": {},
         "midjourney_video": {},
         "sora": {},
         "veo3": {},

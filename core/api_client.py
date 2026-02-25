@@ -67,6 +67,36 @@ class APIClient:
             # Default to JPEG if unknown
             return "image/jpeg"
 
+    def _build_kling_camera_control(self, params: dict) -> dict | None:
+        """Build camera_control object for Kling models
+        
+        Based on server implementation:
+        - camera_control.type: preset type (simple, down_back, forward_up, etc.)
+        - camera_control.config: {horizontal, vertical, pan, tilt, roll, zoom}
+        """
+        camera_type = params.get("camera_control_type", "")
+        
+        config_fields = ["horizontal", "vertical", "pan", "tilt", "roll", "zoom"]
+        config_values = {}
+        has_config = False
+        
+        for field in config_fields:
+            key = f"camera_{field}"
+            value = params.get(key)
+            if value is not None and value != "" and value != 0:
+                config_values[field] = float(value)
+                has_config = True
+        
+        if camera_type or has_config:
+            camera_control = {}
+            if camera_type:
+                camera_control["type"] = camera_type
+            if has_config:
+                camera_control["config"] = config_values
+            return camera_control
+        
+        return None
+
     def _build_request_body(
         self,
         model_key: str,
@@ -96,33 +126,39 @@ class APIClient:
         url = f"{self.base_url}{endpoint}"
         headers = self._get_headers()
 
-        # Build request body
         body = {}
+        is_kling = "kling" in model_key
 
-        # Handle image encoding
         if image_paths:
             encoded_images = [self._encode_image(path) for path in image_paths]
-            # Check if model uses "images" array instead of "image"
             if config.get("image_as_array"):
                 body["images"] = encoded_images
             else:
-                # Single image mode - use first image
                 body["image"] = encoded_images[0] if encoded_images else None
 
-        # Handle extra images (last_frame, reference_images)
         if extra_images:
-            if "last_frame" in extra_images and extra_images["last_frame"]:
+            if is_kling and "last_frame" in extra_images and extra_images["last_frame"]:
+                body["image_tail"] = self._encode_image(extra_images["last_frame"])
+            elif "last_frame" in extra_images and extra_images["last_frame"]:
                 body["last_frame"] = self._encode_image(extra_images["last_frame"])
             if "reference_images" in extra_images and extra_images["reference_images"]:
                 body["reference_images"] = [self._encode_image(path) for path in extra_images["reference_images"]]
 
-        # Add other parameters
+        if is_kling:
+            camera_control = self._build_kling_camera_control(params)
+            if camera_control:
+                body["camera_control"] = camera_control
+
         params_def = config.get("params", {})
+        camera_keys = {"camera_control_type", "camera_horizontal", "camera_vertical", 
+                       "camera_pan", "camera_tilt", "camera_roll", "camera_zoom"}
+        # 服务端通过路由自动注入 model 字段，客户端不需要发送
+        skip_keys = {"image", "model_name", "model"} | camera_keys
+        
         for key, value in params.items():
-            if key == "image":
-                continue  # Already handled
+            if key in skip_keys:
+                continue
             if value is not None and value != "":
-                # Check for value_map in config
                 param_config = params_def.get(key, {})
                 value_map = param_config.get("value_map")
                 if value_map and value in value_map:
@@ -130,13 +166,19 @@ class APIClient:
                 elif key == "cfg_scale":
                     body[key] = float(value)
                 elif key == "seed":
-                    # Convert seed to integer
                     try:
                         body[key] = int(value)
                     except (ValueError, TypeError):
-                        pass  # Skip invalid seed values
-                elif key == "duration" or key == "n":
-                    # Convert duration and n to integer
+                        pass
+                elif key == "duration":
+                    # Kling V2.x: duration 是整数 (Literal[5, 10])
+                    # Kling V3: duration 是整数 (ge=3, le=15)
+                    # 其他模型: 保持原逻辑
+                    try:
+                        body[key] = int(value)
+                    except (ValueError, TypeError):
+                        body[key] = value
+                elif key == "n":
                     try:
                         body[key] = int(value)
                     except (ValueError, TypeError):
@@ -271,15 +313,12 @@ class APIClient:
                 else:
                     return False, "No task ID in response", None
             else:
-                error_msg = f"API error: {response.status_code}"
                 try:
                     error_data = response.json()
-                    if "error" in error_data:
-                        error_msg = error_data["error"].get("detail", error_msg)
-                    elif "message" in error_data:
-                        error_msg = error_data["message"]
+                    import json as _json
+                    error_msg = f"HTTP {response.status_code}\n{_json.dumps(error_data, indent=2, ensure_ascii=False)}"
                 except Exception:
-                    error_msg = response.text[:200]
+                    error_msg = f"HTTP {response.status_code}\n{response.text}"
 
                 return False, error_msg, None
 

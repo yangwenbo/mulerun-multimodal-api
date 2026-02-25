@@ -28,6 +28,8 @@ from ui.handlers.task_management import (
 
 from ui.handlers.visibility import (
     update_param_visibility,
+    update_multi_shot,
+    update_shot_type,
 )
 
 __all__ = [
@@ -45,4 +47,6 @@ __all__ = [
     "delete_selected_task",
     # Visibility handlers
     "update_param_visibility",
+    "update_multi_shot",
+    "update_shot_type",
 ]
