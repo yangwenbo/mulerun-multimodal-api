@@ -37,6 +37,8 @@ SITE_MODELS = {
         "wan2_5_i2i_preview": {},
         "nano_banana_pro_generation": {},
         "nano_banana_pro_edit": {},
+        "nano_banana_2_generation": {},
+        "nano_banana_2_edit": {},
         "wan2_5_t2v_preview": {},
         "wan2_5_i2v_preview": {},
         # Wan2.6 models
@@ -56,6 +58,8 @@ SITE_MODELS = {
         # MuleRouter 支持的模型
         "nano_banana_pro_generation": {},
         "nano_banana_pro_edit": {},
+        "nano_banana_2_generation": {},
+        "nano_banana_2_edit": {},
         "midjourney_video": {},
         "midjourney_diffusion": {},
         "wan2_6_t2v": {},

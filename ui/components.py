@@ -56,6 +56,7 @@ class SidebarComponents:
     audio: Any
     audio_url: Any
     prompt_extend: Any
+    web_search: Any
     seed: Any
     n_images: Any
     multi_shot: Any
@@ -96,7 +97,7 @@ def _build_header():
     <div class="title-container">
         <h1>Mule Multimodal Studio</h1>
         <div>
-        Multiple Multimodal API of <b>Kling</b>, <b>Midjourney</b>, <b>Google Veo3</b>, <b>Nano Banana Pro</b>, <b>OpenAI Sora2</b>, <b>Alibaba Wan2.5/2.6</b>, <b>Qwen Image</b> and to generate Images and Videos
+        Multiple Multimodal API of <b>Kling</b>, <b>Midjourney</b>, <b>Google Veo3</b>, <b>Nano Banana Pro/2</b>, <b>OpenAI Sora2</b>, <b>Alibaba Wan2.5/2.6</b>, <b>Qwen Image</b> and to generate Images and Videos
         </div>
     </div>
     """)
@@ -221,6 +222,7 @@ def _build_sidebar() -> SidebarComponents:
             visible=False
         )
         prompt_extend = gr.Dropdown(label="Prompt Extend", visible=False)
+        web_search = gr.Dropdown(label="Web Search", visible=False)
         seed = gr.Textbox(label="Seed", visible=False)
         n_images = gr.Dropdown(label="Number of Images", visible=False)
         shot_type = gr.Dropdown(label="Shot Type", visible=False)
@@ -302,6 +304,7 @@ def _build_sidebar() -> SidebarComponents:
         audio=audio,
         audio_url=audio_url,
         prompt_extend=prompt_extend,
+        web_search=web_search,
         seed=seed,
         n_images=n_images,
         multi_shot=multi_shot,
@@ -411,6 +414,7 @@ def _bind_events(sidebar: SidebarComponents, task_panel: TaskPanelComponents):
             sidebar.duration_int,
             sidebar.resolution, sidebar.size, sidebar.seconds, sidebar.cfg_scale,
             sidebar.video_type, sidebar.audio, sidebar.audio_url, sidebar.prompt_extend,
+            sidebar.web_search,
             sidebar.seed, sidebar.n_images, sidebar.multi_shot, sidebar.shot_type,
             sidebar.multi_prompt,
             sidebar.last_frame, sidebar.last_frame_url,
@@ -439,6 +443,7 @@ def _bind_events(sidebar: SidebarComponents, task_panel: TaskPanelComponents):
             sidebar.duration_int,
             sidebar.resolution, sidebar.size, sidebar.seconds, sidebar.cfg_scale,
             sidebar.video_type, sidebar.audio, sidebar.audio_url, sidebar.prompt_extend,
+            sidebar.web_search,
             sidebar.seed, sidebar.n_images, sidebar.multi_shot, sidebar.shot_type,
             sidebar.multi_prompt,
             sidebar.last_frame, sidebar.last_frame_url,

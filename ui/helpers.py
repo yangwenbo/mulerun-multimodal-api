@@ -169,6 +169,7 @@ def build_params(
     audio: str,
     audio_url: str,
     prompt_extend: str,
+    web_search: str,
     seed: str,
     n_images: str,
     multi_shot: str = None,
@@ -222,6 +223,8 @@ def build_params(
         params["audio_url"] = process_google_drive_url(audio_url.strip())
     if prompt_extend and "prompt_extend" in params_def:
         params["prompt_extend"] = prompt_extend
+    if web_search and "web_search" in params_def:
+        params["web_search"] = web_search
     if seed and seed.strip() and "seed" in params_def:
         params["seed"] = seed.strip()
     if n_images and "n" in params_def:

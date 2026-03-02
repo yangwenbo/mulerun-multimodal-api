@@ -1,6 +1,6 @@
 # Mule Multimodal Studio
 
-A powerful Video/Image Generation Client with Gradio Web UI, supporting multiple AI models including Kling, Midjourney, Sora, Veo3, Wan2.5/2.6, and Nano Banana Pro.
+A powerful Video/Image Generation Client with Gradio Web UI, supporting multiple AI models including Kling, Midjourney, Sora, Veo3, Wan2.5/2.6, Nano Banana Pro, and Nano Banana 2.
 
 ## Features
 
@@ -119,6 +119,8 @@ http://127.0.0.1:7860
 | Midjourney Image Generation | `midjourney_diffusion` | text2image | MuleRun, MuleRouter |
 | Nano Banana Pro Generation | `nano_banana_pro_generation` | text2image | MuleRun, MuleRouter |
 | Nano Banana Pro Edit | `nano_banana_pro_edit` | image2image | MuleRun, MuleRouter |
+| Nano Banana 2 Generation | `nano_banana_2_generation` | text2image | MuleRun, MuleRouter |
+| Nano Banana 2 Edit | `nano_banana_2_edit` | image2image | MuleRun, MuleRouter |
 | Wan2.5 Image Generation | `wan2_5_t2i_preview` | text2image | MuleRun |
 | Wan2.5 Image Edit | `wan2_5_i2i_preview` | image2image | MuleRun |
 | Wan2.6 Image Generation | `wan2_6_t2i` | text2image | MuleRouter |
@@ -161,7 +163,7 @@ The Web UI consists of two main sections:
 1. **Select API Site**: Click the "API Site" dropdown
    - Choose "MuleRun (api.mulerun.com)" for Kling, Sora, Veo3, Wan2.5 models
    - Choose "MuleRouter (api.mulerouter.ai)" for Wan2.6 models
-   - Note: Midjourney and Nano Banana Pro are available on both sites
+   - Note: Midjourney, Nano Banana Pro, and Nano Banana 2 are available on both sites
 
 2. **Enter API Token**: Type your API token in the "API Token" text field
    - The token is required for all API requests

@@ -35,6 +35,7 @@ def submit_task(
     audio: str,
     audio_url: str,
     prompt_extend: str,
+    web_search: str,
     seed: str,
     n_images: str,
     multi_shot: str,
@@ -157,7 +158,7 @@ def submit_task(
     params = build_params(
         model_key, prompt, negative_prompt, model_name, mode, aspect_ratio,
         duration, duration_int, resolution, size, seconds, cfg_scale, video_type,
-        audio, audio_url, prompt_extend, seed, n_images, multi_shot, shot_type, multi_prompt
+        audio, audio_url, prompt_extend, web_search, seed, n_images, multi_shot, shot_type, multi_prompt
     )
 
     # Create extra_images dict for special image parameters

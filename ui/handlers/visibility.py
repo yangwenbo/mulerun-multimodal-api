@@ -9,20 +9,20 @@ from config import MODELS
 def update_param_visibility(model_key: str):
     """Update parameter visibility based on selected model.
 
-    Output order (28 items):
+    Output order (29 items):
     prompt, negative_prompt,
     image, image_url,
     multi_images, multi_images_url,
     model_name, mode, aspect_ratio, duration, duration_int,
     resolution, size, seconds, cfg_scale,
-    video_type, audio, audio_url, prompt_extend,
+    video_type, audio, audio_url, prompt_extend, web_search,
     seed, n_images, multi_shot, shot_type,
     multi_prompt,
     last_frame, last_frame_url,
     reference_images, reference_images_url
     """
     if not model_key or model_key not in MODELS:
-        return [gr.update(visible=False)] * 28
+        return [gr.update(visible=False)] * 29
 
     model_config = MODELS[model_key]
     params = model_config["params"]
@@ -143,6 +143,11 @@ def update_param_visibility(model_key: str):
 
     if "prompt_extend" in params:
         updates.append(gr.update(visible=True, choices=params["prompt_extend"]["options"], value=params["prompt_extend"]["default"], label=params["prompt_extend"].get("label", "Prompt Extend")))
+    else:
+        updates.append(gr.update(visible=False))
+
+    if "web_search" in params:
+        updates.append(gr.update(visible=True, choices=params["web_search"]["options"], value=params["web_search"]["default"], label=params["web_search"].get("label", "Web Search")))
     else:
         updates.append(gr.update(visible=False))
 
